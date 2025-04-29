@@ -32,10 +32,10 @@ class IOManagerWindow(QMainWindow):
     def get_project_list(self):
         path = "/show"
         project_list = []
-        for folder in os.listdir(path):  # ← os.listdir() 에 path를 줘야 돼
+        for folder in os.listdir(path): 
             if os.path.isdir(
                 os.path.join(path, folder)
-            ):  # ← is_dir 체크할 때도 경로 합쳐야 돼
+            ): 
                 project_list.append(folder)
         return project_list
 
