@@ -10,6 +10,8 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
     QSpinBox,
+    QSpacerItem,
+    QSizePolicy,
 )
 
 import os
@@ -24,9 +26,9 @@ class UiBuilder(QWidget):
     def setup_ui(self):
         main_layout = QVBoxLayout(self)
 
-        # --- 위젯 정의 --- UI 이름 / 타입 / 초기값
+        # --- 위젯 리스트 --- UI 이름 / 타입 / 초기값 setText
         self.widget_list = [
-            ("path_label", QLabel, "Path :"),
+            ("path_label", QLabel, "Plate Path :"),
             ("path_line_edit", QLineEdit, ""),
             ("project_label", QLabel, "Project :"),
             ("project_combo_box", QComboBox, ""),
@@ -56,6 +58,7 @@ class UiBuilder(QWidget):
         main_layout.addLayout(bottom_layout)
 
     def build_header_layout1(self):
+        """최상단 레이아웃"""
         layout = QHBoxLayout()
         layout.addWidget(self.widget_dict["path_label"])
         layout.addWidget(self.widget_dict["path_line_edit"], 3)
@@ -64,12 +67,15 @@ class UiBuilder(QWidget):
         return layout
 
     def build_header_layout2(self):
+        """2번째 레이아웃"""
         layout = QHBoxLayout()
         layout.addWidget(self.widget_dict["project_label"])
+
         layout.addWidget(self.widget_dict["project_combo_box"])
         return layout
 
     def build_table(self):
+        """메타데이터 연동 예정"""
         table = QTableWidget(30, 10)
         table.setHorizontalHeaderLabels(
             ["Frame", "Timecode", "Clip Name", "Slate", "Note"]
