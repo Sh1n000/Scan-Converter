@@ -28,12 +28,14 @@ class UiBuilder(QWidget):
 
         # --- 위젯 리스트 --- UI 이름 / 타입 / 초기값 setText
         self.widget_list = [
-            ("path_label", QLabel, "Plate Path :"),
-            ("path_line_edit", QLineEdit, ""),
             ("project_label", QLabel, "Project :"),
             ("project_combo_box", QComboBox, ""),
-            ("select_btn", QPushButton, "Select"),
-            ("load_btn", QPushButton, "Load"),
+            ("date_label", QLabel, "Date :"),
+            ("date_combo_box", QComboBox, ""),
+            ("path_label", QLabel, "Path :"),
+            ("path_line_edit", QLineEdit, ""),
+            ("select_btn", QPushButton, "Select to Convert"),
+            ("load_btn", QPushButton, "Load Metadata"),
             ("btn_edit", QPushButton, "Edit"),
             ("btn_save", QPushButton, "Save"),
             ("btn_collect", QPushButton, "Collect"),
@@ -60,22 +62,24 @@ class UiBuilder(QWidget):
     def build_header_layout1(self):
         """최상단 레이아웃"""
         layout = QHBoxLayout()
+        layout.addWidget(self.widget_dict["project_label"])
+        layout.addWidget(self.widget_dict["project_combo_box"])
+        layout.addWidget(self.widget_dict["date_label"])
+        layout.addWidget(self.widget_dict["date_combo_box"])
+
+        return layout
+
+    def build_header_layout2(self):
+        """2번째 레이아웃"""
+        layout = QHBoxLayout()
         layout.addWidget(self.widget_dict["path_label"])
         layout.addWidget(self.widget_dict["path_line_edit"], 3)
         layout.addWidget(self.widget_dict["select_btn"])
         layout.addWidget(self.widget_dict["load_btn"])
         return layout
 
-    def build_header_layout2(self):
-        """2번째 레이아웃"""
-        layout = QHBoxLayout()
-        layout.addWidget(self.widget_dict["project_label"])
-
-        layout.addWidget(self.widget_dict["project_combo_box"])
-        return layout
-
     def build_table(self):
-        """메타데이터 연동 예정"""
+        """Plate List Table : 체크 박스 추가 예정"""
         table = QTableWidget(30, 10)
         table.setHorizontalHeaderLabels(
             ["Frame", "Timecode", "Clip Name", "Slate", "Note"]

@@ -20,10 +20,25 @@ class IOManagerWindow(QMainWindow):
     def init_signals(self):
         self.ui.widget_dict["select_btn"].clicked.connect(self.select_scan_dir)
         self.ui.widget_dict["load_btn"].clicked.connect(self.load_metadata)
-        # Project Combo Box
+
         self.ui.widget_dict["project_combo_box"].currentTextChanged.connect(
-            self.link_to_project
+            self.project_link_date_list
         )
+        self.ui.widget_dict["date_combo_box"].currentTextChanged.connect(
+            self.update_scan_path
+        )
+
+    def get_scan_path(self, project):
+        return f"/show/{project}/product/scan"
+
+    def update_scan_path(self):
+        """Project + Date 선택 후 path_line_edit에 자동 경로 세팅"""
+        project = self.ui.widget_dict["project_combo_box"].currentText()
+        date = self.ui.widget_dict["date_combo_box"].currentText()
+        if project and date:
+            full_path = os.path.join(self.get_scan_path(project), date)
+            self.ui.widget_dict["path_line_edit"].setText(full_path)
+            print(f"[INFO] 경로 설정: {full_path}")
 
     def select_scan_dir(self):
         """
@@ -34,41 +49,43 @@ class IOManagerWindow(QMainWindow):
         # 폴더만 선택할 수 있게 제한
         options = QFileDialog.Options()
         options |= QFileDialog.ShowDirsOnly
-
         scan_dir_path = QFileDialog.getExistingDirectory(
             self,
             "Select Folder",
-            self.ui.widget_dict["path_line_edit"].text(),  # 시작 폴더 (기본값)
+            self.ui.widget_dict["path_line_edit"].text(),
             options=options,
         )
         if scan_dir_path:
             self.ui.widget_dict["path_line_edit"].setText(scan_dir_path)
 
     def get_project_list(self):
-        """show경로에서 Project Dir 리스트 반환"""
-        path = "/show"
-        project_list = []
-        for folder in os.listdir(path):
-            if os.path.isdir(os.path.join(path, folder)):
-                project_list.append(folder)
-        return project_list
+        base_path = "/show"
+        return [
+            f
+            for f in os.listdir(base_path)
+            if os.path.isdir(os.path.join(base_path, f))
+        ]
 
     def load_project_list(self):
         project_list = self.get_project_list()
         self.ui.widget_dict["project_combo_box"].clear()
         self.ui.widget_dict["project_combo_box"].addItems(project_list)
 
-    def link_to_project_scan_dirs(self):
-        """User가 선택한 Project를 받아, scan 경로를 자동으로 연결"""
-        selected_project = self.ui.widget_dict["project_combo_box"].currentText()
-        if selected_project:
-            project_path = f"/show/{selected_project}"
-            scan_dirs_path = f"{project_path}/product/scan"
-            self.ui.widget_dict["path_line_edit"].setText(scan_dirs_path)
-            print(
-                f"[INFO] 프로젝트 선택: {selected_project}, 경로 설정: {scan_dirs_path}"
-            )
+    def project_link_date_list(self):
+        """프로젝트 선택 시 날짜 목록 갱신"""
+        project = self.ui.widget_dict["project_combo_box"].currentText()
+        if not project:
+            return
+        scan_base = self.get_scan_path(project)
+        if os.path.exists(scan_base):
+            scan_dates = [
+                f
+                for f in os.listdir(scan_base)
+                if os.path.isdir(os.path.join(scan_base, f))
+            ]
+            self.ui.widget_dict["date_combo_box"].clear()
+            self.ui.widget_dict["date_combo_box"].addItems(scan_dates)
 
     def load_metadata(self):
-        # 실제 메타데이터 로딩 구현 예정
+        # TODO: 구현 예정
         pass
