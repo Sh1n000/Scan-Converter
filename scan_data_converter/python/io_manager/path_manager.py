@@ -1,0 +1,45 @@
+from pathlib import Path
+from typing import Optional
+
+
+class PathManager:
+    def __init__(self, show_root: str):
+        self.show_root = Path(show_root)
+        self.project_path: Optional[Path] = None
+        # self.scan_path: Optional[Path] = None
+        # self.seq_path: Optional[Path] = None
+
+    def get_project_list(self) -> list[str]:
+        """show 경로의 폴더를 Project List로 반환"""
+        if not self.show_root:
+            raise ValueError("show root Value Error - Project List")
+        return sorted([p.name for p in self.show_root.iterdir() if p.is_dir()])
+        # Path객체.iterdir(): 디렉토리 내의 항목들을 순회
+
+    def project_to_path(self, project_name: str, arg):
+        """Project와 인자를 받으면 path 지정"""
+
+        self.project_path = self.show_root / project_name
+
+        if arg == "scan":
+            self.scan_path = self.project_path / "product" / "scan"
+            return self.scan_path
+        elif arg == "seq":
+            self.seq_path = self.project_path / "seq"
+        else:
+            pass
+
+    def get_scan_date_list(self) -> list[str]:
+        """선택된 프로젝트의 scan 날짜 리스트 반환"""
+        if not self.scan_path or not self.scan_path.exists():
+            return []
+        return sorted([p.name for p in self.scan_path.iterdir() if p.is_dir()])
+
+    # def get_scan_name_list(self, date_version: str) -> list[str]:
+    #     """scan 날짜 폴더 안의 scan_name 리스트"""
+    #     date_path = self.scan_path / date_version
+    #     return sorted([p.name for p in date_path.iterdir() if p.is_dir()])
+
+    # def get_org_dir(self, date_version: str, scan_name: str) -> Path:
+    #     """org 폴더 경로 반환"""
+    #     return self.scan_path / date_version / scan_name / "org"
