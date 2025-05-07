@@ -7,6 +7,8 @@ from pathlib import Path
 
 
 class IOManagerWindow(QMainWindow):
+    """Io Manager UI Event 관리 Class"""
+
     def __init__(self):
         super().__init__()
         self.setWindowTitle("I/O Manager")
@@ -24,7 +26,7 @@ class IOManagerWindow(QMainWindow):
         self.load_project_list()
 
     def setup_ui(self):
-        """UI 요소 초기화 상태 세팅"""
+        """UI 시작시 Setting"""
         # Line Edit에 기본 경로 세팅 (예: /show)
         self.ui.widget_dict["path_line_edit"].setText(str(self.path_mgr.show_root))
 
@@ -45,10 +47,6 @@ class IOManagerWindow(QMainWindow):
         self.ui.widget_dict["project_combo_box"].clear()
         self.ui.widget_dict["project_combo_box"].addItems(project_list)
 
-    def update_path_line_edit(self, path=str):
-        self.ui.widget_dict["path_line_edit"].clear()
-        self.ui.widget_dict["path_line_edit"].setText(path)
-
     def project_link_scan_path(self):
         """
         ### 수정중 ###
@@ -59,16 +57,9 @@ class IOManagerWindow(QMainWindow):
 
         self.update_path_line_edit(scan_path)
 
-    def path_link_date_list(self):
-        pass
-        # date = self.ui.widget_dict["date_combo_box"].currentText()
-
-        # if project and date:
-        #     # full_path = os.path.join(self.get_scan_path(project), date)
-        #     full_path = scan_path / date  # Path 객체
-
-        #     self.ui.widget_dict["path_line_edit"].setText(str(full_path))
-        #     print(f"[INFO] 경로 설정: {full_path}")
+    def update_path_line_edit(self, path: Path):
+        self.ui.widget_dict["path_line_edit"].clear()
+        self.ui.widget_dict["path_line_edit"].setText(str(path))
 
     def select_scan_dir(self):
         """
@@ -78,6 +69,7 @@ class IOManagerWindow(QMainWindow):
         """
         # 폴더만 선택할 수 있게 제한
         options = QFileDialog.Options()
+
         options |= QFileDialog.ShowDirsOnly
         scan_dir_path = QFileDialog.getExistingDirectory(
             self,
@@ -95,22 +87,33 @@ class IOManagerWindow(QMainWindow):
         """
         pass
 
-    def project_link_date_list(self):
-        """프로젝트 선택 시 날짜 목록 갱신"""
-        project = self.ui.widget_dict["project_combo_box"].currentText()
-        if not project:
-            return
+    # def project_link_date_list(self):
+    #     """프로젝트 선택 시 날짜 목록 갱신"""
+    #     project = self.ui.widget_dict["project_combo_box"].currentText()
+    #     if not project:
+    #         return
 
-        scan_path = self.path_mgr.project_to_path(project, "scan")
+    #     scan_path = self.path_mgr.project_to_path(project, "scan")
 
-        # if os.path.exists(scan_path):
-        #     scan_dates = [
-        #         date_f
-        #         for date_f in os.listdir(scan_path)
-        #         if os.path.isdir(os.path.join(scan_path, date_f))
-        #     ]
-        #     self.ui.widget_dict["date_combo_box"].clear()
-        #     self.ui.widget_dict["date_combo_box"].addItems(scan_dates)
+    # if os.path.exists(scan_path):
+    #     scan_dates = [
+    #         date_f
+    #         for date_f in os.listdir(scan_path)
+    #         if os.path.isdir(os.path.join(scan_path, date_f))
+    #     ]
+    #     self.ui.widget_dict["date_combo_box"].clear()
+    #     self.ui.widget_dict["date_combo_box"].addItems(scan_dates)
+
+    def path_link_date_list(self):
+        pass
+        # date = self.ui.widget_dict["date_combo_box"].currentText()
+
+        # if project and date:
+        #     # full_path = os.path.join(self.get_scan_path(project), date)
+        #     full_path = scan_path / date  # Path 객체
+
+        #     self.ui.widget_dict["path_line_edit"].setText(str(full_path))
+        #     print(f"[INFO] 경로 설정: {full_path}")
 
     def load_metadata(self):
         # TODO: 구현 예정

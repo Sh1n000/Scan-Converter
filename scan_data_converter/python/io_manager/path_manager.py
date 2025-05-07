@@ -3,6 +3,8 @@ from typing import Optional
 
 
 class PathManager:
+    """Path와 관련된 이벤트 관리 경로지정 및 List 반환"""
+
     def __init__(self, show_root: str):
         self.show_root = Path(show_root)
         self.project_path: Optional[Path] = None

@@ -21,6 +21,9 @@ class UiBuilder(QWidget):
     def __init__(self):
         super().__init__()
 
+        # self.setWindowTitle("I/O Manager")
+        # self.setMinimumSize(1200, 800)
+
         self.setup_ui()
 
     def setup_ui(self):
