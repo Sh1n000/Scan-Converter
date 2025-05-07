@@ -36,30 +36,59 @@ class IOManagerWindow(QMainWindow):
         self.ui.widget_dict["project_combo_box"].currentTextChanged.connect(
             self.project_link_scan_path
         )
-
-        # self.ui.widget_dict["date_combo_box"].currentTextChanged.connect(
-        #     self.update_scan_path
-        # )
-
-    def load_project_list(self):
-        project_list = self.path_mgr.get_project_list()
-
-        self.ui.widget_dict["project_combo_box"].clear()
-        self.ui.widget_dict["project_combo_box"].addItems(project_list)
-
-    def project_link_scan_path(self):
-        """
-        ### 수정중 ###
-        Project 선택 후 path_line_edit에 자동 경로 세팅
-        """
-        project = self.ui.widget_dict["project_combo_box"].currentText()
-        scan_path = self.path_mgr.project_to_path(project, "scan")
-
-        self.update_path_line_edit(scan_path)
+        self.ui.widget_dict["date_combo_box"].currentTextChanged.connect(
+            self.date_link_scan_path
+        )
 
     def update_path_line_edit(self, path: Path):
         self.ui.widget_dict["path_line_edit"].clear()
         self.ui.widget_dict["path_line_edit"].setText(str(path))
+
+    def load_project_list(self):
+        """Path Manager에서 Project List 받기"""
+        self.ui.widget_dict["project_combo_box"].clear()
+        self.ui.widget_dict["project_combo_box"].addItem("Select Project")
+        project_list = self.path_mgr.get_project_list()
+        self.ui.widget_dict["project_combo_box"].addItems(project_list)
+
+    def load_scan_date_list(self):
+        """Path Manager에서 Scan Date List 받기"""
+        self.ui.widget_dict["date_combo_box"].clear()
+        self.ui.widget_dict["date_combo_box"].addItem("Select Date")
+        scan_date_list = self.path_mgr.get_scan_date_list()
+        self.ui.widget_dict["date_combo_box"].addItems(scan_date_list)
+
+    def project_link_scan_path(self, item: str):
+        """Project 선택 후 path_line_edit에 자동 경로 세팅"""
+        if item == "Select Project":
+            self.update_path_line_edit(Path(""))  # 빈 경로로 초기화
+            self.ui.widget_dict["date_combo_box"].clear()
+            self.ui.widget_dict["date_combo_box"].addItem("Select Date")
+            return
+
+        # 실제 프로젝트 선택 시
+        scan_path = self.path_mgr.project_to_path(item, "scan")
+        self.update_path_line_edit(scan_path)
+
+        self.load_scan_date_list()  # Project 선택 후 Scan Date List 출력
+
+    def date_link_scan_path(self, item: str):
+        """
+        이미 path_line_edit에 날짜가 포함되어 있다면 중복 방지
+        """
+        if item == "Select Date":
+            self.update_path_line_edit(self.path_mgr.scan_path or Path(""))
+            return
+
+        current_path = Path(self.ui.widget_dict["path_line_edit"].text())
+        base_path = self.path_mgr.scan_path or current_path
+
+        # 중복 날짜 방지: 이미 마지막 경로가 날짜이면 제거
+        if current_path.name == item:
+            current_path = current_path.parent
+
+        new_path = base_path / item
+        self.update_path_line_edit(new_path)
 
     def select_scan_dir(self):
         """
@@ -86,34 +115,6 @@ class IOManagerWindow(QMainWindow):
         mov 인경우 : exr로 변환하는 경우가 있다. [Nuke Convert]
         """
         pass
-
-    # def project_link_date_list(self):
-    #     """프로젝트 선택 시 날짜 목록 갱신"""
-    #     project = self.ui.widget_dict["project_combo_box"].currentText()
-    #     if not project:
-    #         return
-
-    #     scan_path = self.path_mgr.project_to_path(project, "scan")
-
-    # if os.path.exists(scan_path):
-    #     scan_dates = [
-    #         date_f
-    #         for date_f in os.listdir(scan_path)
-    #         if os.path.isdir(os.path.join(scan_path, date_f))
-    #     ]
-    #     self.ui.widget_dict["date_combo_box"].clear()
-    #     self.ui.widget_dict["date_combo_box"].addItems(scan_dates)
-
-    def path_link_date_list(self):
-        pass
-        # date = self.ui.widget_dict["date_combo_box"].currentText()
-
-        # if project and date:
-        #     # full_path = os.path.join(self.get_scan_path(project), date)
-        #     full_path = scan_path / date  # Path 객체
-
-        #     self.ui.widget_dict["path_line_edit"].setText(str(full_path))
-        #     print(f"[INFO] 경로 설정: {full_path}")
 
     def load_metadata(self):
         # TODO: 구현 예정

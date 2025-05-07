@@ -14,22 +14,20 @@ from PySide6.QtWidgets import (
     QSizePolicy,
 )
 
-import os
+# import os
 
 
 class UiBuilder(QWidget):
     def __init__(self):
         super().__init__()
 
-        # self.setWindowTitle("I/O Manager")
-        # self.setMinimumSize(1200, 800)
-
         self.setup_ui()
 
     def setup_ui(self):
         main_layout = QVBoxLayout(self)
 
-        # --- 위젯 리스트 --- UI 이름 / 타입 / 초기값 setText
+        # --- 위젯 리스트 --- UI 이름 / 타입 / setText
+        # ComboBox는 addWidget사용
         self.widget_list = [
             ("project_label", QLabel, "Project :"),
             ("project_combo_box", QComboBox, ""),
@@ -48,8 +46,15 @@ class UiBuilder(QWidget):
 
         for name, widget_type, value in self.widget_list:
             widget = widget_type()
+
+            # Set Text
             if isinstance(widget, (QLabel, QPushButton, QLineEdit)):
                 widget.setText(value)
+
+            # elif isinstance(widget, QComboBox):
+            #     widget.addItems(value)
+
+            # 위젯 생성
             self.widget_dict[name] = widget
 
         header_layout1 = self.build_header_layout1()

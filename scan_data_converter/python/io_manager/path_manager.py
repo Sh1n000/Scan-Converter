@@ -8,15 +8,16 @@ class PathManager:
     def __init__(self, show_root: str):
         self.show_root = Path(show_root)
         self.project_path: Optional[Path] = None
-        # self.scan_path: Optional[Path] = None
+        self.scan_path: Optional[Path] = None
         # self.seq_path: Optional[Path] = None
 
     def get_project_list(self) -> list[str]:
         """show 경로의 폴더를 Project List로 반환"""
-        if not self.show_root:
-            raise ValueError("show root Value Error - Project List")
-        return sorted([p.name for p in self.show_root.iterdir() if p.is_dir()])
+
+        project_list = sorted([p.name for p in self.show_root.iterdir() if p.is_dir()])
         # Path객체.iterdir(): 디렉토리 내의 항목들을 순회
+
+        return project_list
 
     def project_to_path(self, project_name: str, arg):
         """Project와 인자를 받으면 path 지정"""
