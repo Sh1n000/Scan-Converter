@@ -70,9 +70,9 @@ class ProjectStructureCreator:
 
 # # 예시 실행
 # if __name__ == "__main__":
-#     project = ProjectStructureCreator("Constantine")
+#     project = ProjectStructureCreator("RND")
 #     project.create_main_structure()
-#     project.create_seq("s030")
-#     project.create_seq("s040")
-#     project.create_shot("s030", "0010")
+#     # project.create_seq("s030")
+#     # project.create_seq("s040")
+#     # project.create_shot("s030", "0010")
 #     project.print_structure_path()
