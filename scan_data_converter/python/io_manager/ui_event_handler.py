@@ -5,14 +5,14 @@ from pathlib import Path
 class IOManagerEventHandler:
     """UI Event 관리 Class"""
 
-    def __init__(self, ui: dict, path_manager):
+    def __init__(self, ui: dict, path_manager, file_manager):
         self.ui = ui  # UI Widgets Dict <- UI Builder
         self.path_mgr = path_manager
-        self.file_mgr = None
+        self.file_mgr = file_manager
 
     def setup_signals(self):
         # Click Event
-        self.ui["select_btn"].clicked.connect(self.select_scan_dir)
+        self.ui["select_btn"].clicked.connect(self.selected_to_convert)
         self.ui["load_btn"].clicked.connect(self.load_metadata)
 
         # 콤보박스
@@ -63,24 +63,8 @@ class IOManagerEventHandler:
         new_path = base_path / item
         self.update_path_line_edit(new_path)
 
-    # def select_scan_dir(self):
-    #     """폴더만 선택가능"""
-    #     options = QFileDialog.Options()
-    #     options |= QFileDialog.ShowDirsOnly
-
-    #     scan_dir_path = QFileDialog.getExistingDirectory(
-    #         None,
-    #         "Select Folder",
-    #         self.ui["path_line_edit"].text(),
-    #         options=options,
-    #     )
-    #     if scan_dir_path:
-    #         self.ui["path_line_edit"].setText(scan_dir_path)
-
-    def select_scan_dir(self):
-        """
-        폴더 선택 후, 파일 유형 (exr 시퀀스 / mov) 확인
-        """
+    def select_dir(self):
+        """폴더만 선택가능"""
         options = QFileDialog.Options()
         options |= QFileDialog.ShowDirsOnly
 
@@ -90,26 +74,22 @@ class IOManagerEventHandler:
             self.ui["path_line_edit"].text(),
             options=options,
         )
-
         if scan_dir_path:
             self.ui["path_line_edit"].setText(scan_dir_path)
 
-            # FileManager 생성 및 타입 분석
-            from .file_manager import FileManager  # 파일 경로에 맞게 import 조정
+    def selected_to_convert(self):
+        """
+        User가 폴더 선택시 Event
+        """
+        self.select_dir()  # 폴더 선택
+        selected_path = self.ui["path_line_edit"].currentText()
+        print(f"Selected Path: {selected_path}")
 
-            self.file_mgr = FileManager(Path(scan_dir_path))
-            scan_type = self.file_mgr.get_scan_type()
+        if not selected_path:
+            return
 
-            # 콘솔 디버깅 출력
-            print(f"[DEBUG] 선택된 경로: {scan_dir_path}")
-            print(f"[DEBUG] 분석된 타입: {scan_type}")
-
-            if scan_type == "exr_sequence":
-                print("[DEBUG] → EXR 시퀀스입니다.")
-            elif scan_type == "mov":
-                print("[DEBUG] → MOV 파일입니다.")
-            else:
-                print("[DEBUG] → 알 수 없는 형식입니다.")
+        file_dict = self.file_mgr.collect_by_extension(selected_path)
+        print(f"File Dict: {file_dict}")
 
     def load_metadata(self):
         # TODO: 이후 구현

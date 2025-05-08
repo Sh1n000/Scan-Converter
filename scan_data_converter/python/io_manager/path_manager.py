@@ -7,8 +7,11 @@ class PathManager:
 
     def __init__(self, show_root: str):
         self.show_root = Path(show_root)
+
+        # Setting Path
         self.project_path: Optional[Path] = None
         self.scan_path: Optional[Path] = None
+        self.selected_path: Optional[Path] = None
         # self.seq_path: Optional[Path] = None
 
     def get_project_list(self) -> list[str]:
@@ -38,11 +41,20 @@ class PathManager:
             return []
         return sorted([p.name for p in self.scan_path.iterdir() if p.is_dir()])
 
-    # def get_scan_name_list(self, date_version: str) -> list[str]:
-    #     """scan 날짜 폴더 안의 scan_name 리스트"""
-    #     date_path = self.scan_path / date_version
-    #     return sorted([p.name for p in date_path.iterdir() if p.is_dir()])
+    def selected_to_path(self, selected_path: str, arg):
+        """User가 선택한 원본 경로기반 경로지정"""
 
-    # def get_org_dir(self, date_version: str, scan_name: str) -> Path:
-    #     """org 폴더 경로 반환"""
-    #     return self.scan_path / date_version / scan_name / "org"
+        if arg == "org":
+            self.org_path = selected_path / "org"
+        elif arg == "jpg":
+            self.seq_path = selected_path / "jpg"
+        elif arg == "mov_to_exr":
+            self.seq_path = selected_path / "mov_to_exr"
+        else:
+            pass
+
+    def seq_shot_to_path(self, seq_shot_path: str, arg):
+        """User가 Seq / Shot Name 지정한뒤 경로지정"""
+
+        if arg == "seq":
+            self.seq_path = seq_shot_path
