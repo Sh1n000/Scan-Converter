@@ -1,38 +1,147 @@
 from pathlib import Path
 from collections import defaultdict
-from typing import Optional
+from typing import List, Dict, Any
 import pyseq
+import json
+
+# 올바른 Sequence 클래스 임포트
+from pyseq import Sequence
 
 
 class FileManager:
     """
-    1. 파일 확장자 분류
-    2. exr 시퀀스 인식
-    3. Rename
+    1. User가 선택한 원본 Plate 경로 기반 Json 생성
+       - exr seq / mov 판별
+       - seq / shot name 정해지기전 Json 생성
+    2. Rename 기능
+    3. Seq / Shot Name 정해진후 Json 재생성
     """
 
     def __init__(self, path: Path):
         if not path.exists() or not path.is_dir():
-            raise ValueError(f"유효하지 않은 경로: {path}")
-
+            raise ValueError(f"File Manager Path Error: {path}")
         self.path = path
-        self.file_dict: dict[str, list[Path]] = defaultdict(list)
+        self.file_dict: Dict[str, List[Path]] = defaultdict(list)
+        self.collect_by_extension()
 
-    def collect_by_extension(self) -> dict[str, list[Path]]:
-        """확장자별로 파일을 분류"""
-        for file in self.path.iterdir():
-            if file.is_file():
-                ext = file.suffix.lower()  # .exr, .mov
-                self.file_dict[ext].append(file)
+    def collect_by_extension(self) -> Dict[str, List[Path]]:
+        """확장자별로 파일을 수집"""
+        self.file_dict.clear()
+        for f in self.path.iterdir():
+            if f.is_file():
+                self.file_dict[f.suffix.lower()].append(f)
+        return dict(self.file_dict)
 
-        return self.file_dict
+    def is_exr_sequence(self) -> bool:
+        """폴더 내 EXR 시퀀스 존재 여부 판별"""
+        return len(self.get_exr_sequences()) > 0
 
-    def get_exr_sequences(self) -> list[pyseq.Sequence]:
-        """EXR 파일이 시퀀스로 존재하는 경우 시퀀스로 인식"""
+    def is_mov(self) -> bool:
+        """폴더 내 MOV 파일 존재 여부 판별"""
+        return bool(self.file_dict.get(".mov"))
+
+    def get_exr_sequences(self) -> List[Sequence]:
+        """EXR 파일 중 Sequence 객체로 인식된 것만 필터링"""
         exr_files = self.file_dict.get(".exr", [])
         if not exr_files:
             return []
 
-        # pyseq.get_sequences 는 str 리스트가 필요함
-        seqs = pyseq.get_sequences([str(f) for f in exr_files])
+        raw = pyseq.get_sequences([str(f) for f in exr_files])
+        # pyseq.get_sequences 결과에 문자열이 섞일 수 있음
+        seqs: List[Sequence] = [s for s in raw if isinstance(s, Sequence)]
         return seqs
+
+    def generate_initial_json(self) -> Dict[str, Any]:
+        """exr seq / mov 기반으로 초기 JSON 생성"""
+        self.collect_by_extension()
+        selected_dir = str(self.path)
+        result: Dict[str, Any] = {"selected_dir": selected_dir}
+
+        # EXR 시퀀스
+        seqs = self.get_exr_sequences()
+        if seqs:
+            selected_data = [
+                {
+                    "pattern": seq.format(),
+                    "start_frame": seq.start(),
+                    "end_frame": seq.end(),
+                    "frame_count": len(seq),
+                }
+                for seq in seqs
+            ]
+            event_info = [
+                {
+                    "org_path": str(
+                        self.path / "org" / seq.format(),
+                    ),
+                    "jpg_path": str(self.path / "jpg" / "exr_to_jpg.t%04d.jpg"),
+                    "excel_path": str(self.path / "no_shot_name.xlsx"),
+                }
+                for seq in seqs[:1]
+            ]
+            result.update(
+                {
+                    "scan_type": "exr_seq",
+                    "selected_data": selected_data,
+                    "event_info": event_info,
+                }
+            )
+            return result
+
+        # #  단일 EXR         # exr_files = self.file_dict.get(".exr", [])
+        # if exr_files:
+        #     selected_data = [{"file_name": f.name} for f in exr_files]
+        #     event_info = [
+        #         {
+        #             "org_path": str(self.path / "org" / f.name),
+        #             "jpg_path": str(self.path / "jpg" / "exr_to_jpg.%04d.jpg"),
+        #             "excel_path": str(self.path / "no_shot_name.xlsx"),
+        #         }
+        #         for f in exr_files[:1]
+        #     ]
+        #     result.update(
+        #         {
+        #             "scan_type": "exr_single",
+        #             "selected_data": selected_data,
+        #             "event_info": event_info,
+        #         }
+        #     )
+        #     return result
+
+        # MOV 처리
+        mov_files = self.file_dict.get(".mov", [])
+        if mov_files:
+            selected_data = [{"file_name": f.name} for f in mov_files]
+            event_info = [
+                {
+                    "org_path": str(self.path / "org" / mov_files[0].name),
+                    "mov_to_exr_path": str(
+                        self.path / "mov_to_exr" / f"{Path(mov_files[0]).stem}.%07d.exr"
+                    ),
+                    "jpg_path": str(self.path / "jpg" / "exr_to_jpg.%04d.jpg"),
+                    "excel_path": str(self.path / "no_shot_name.xlsx"),
+                }
+            ]
+            result.update(
+                {
+                    "scan_type": "mov",
+                    "selected_data": selected_data,
+                    "event_info": event_info,
+                }
+            )
+            return result
+
+        # 4) 기타
+        result.update({"scan_type": "unknown", "selected_data": [], "event_info": []})
+        return result
+
+    def save_initial_json(self, filename: str = "select_event.json") -> Path:
+        """generate_initial_json()를 파일로 저장하고 저장 경로 반환"""
+        data = self.generate_initial_json()
+        out_path = self.path / filename
+        out_path.write_text(self.to_json(data), encoding="utf-8")
+        return out_path
+
+    def to_json(self, data: Any, **kwargs) -> str:
+        """JSON 직렬화 헬퍼 메서드"""
+        return json.dumps(data, ensure_ascii=False, indent=2, **kwargs)

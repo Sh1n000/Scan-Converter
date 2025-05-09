@@ -47,9 +47,9 @@ class PathManager:
         if arg == "org":
             self.org_path = selected_path / "org"
         elif arg == "jpg":
-            self.seq_path = selected_path / "jpg"
+            self.jpg_path = selected_path / "jpg"
         elif arg == "mov_to_exr":
-            self.seq_path = selected_path / "mov_to_exr"
+            self.mov_to_exr_path = selected_path / "org" / "mov_to_exr"
         else:
             pass
 

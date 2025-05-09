@@ -1,14 +1,15 @@
 from PySide6.QtWidgets import QFileDialog
 from pathlib import Path
 
+from .file_manager import FileManager
+
 
 class IOManagerEventHandler:
     """UI Event 관리 Class"""
 
-    def __init__(self, ui: dict, path_manager, file_manager):
+    def __init__(self, ui: dict, path_manager):
         self.ui = ui  # UI Widgets Dict <- UI Builder
         self.path_mgr = path_manager
-        self.file_mgr = file_manager
 
     def setup_signals(self):
         # Click Event
@@ -82,14 +83,26 @@ class IOManagerEventHandler:
         User가 폴더 선택시 Event
         """
         self.select_dir()  # 폴더 선택
-        selected_path = self.ui["path_line_edit"].currentText()
+        selected_p = self.ui["path_line_edit"].text()
+        selected_path = Path(selected_p)
         print(f"Selected Path: {selected_path}")
 
         if not selected_path:
             return
 
-        file_dict = self.file_mgr.collect_by_extension(selected_path)
-        print(f"File Dict: {file_dict}")
+        # 선택된 경로 FileManager로 변환
+        selected_fm = FileManager(selected_path)
+        # Json 생성
+        selected_fm.save_initial_json()
+
+        # if selected_fm.is_mov():
+        #     pass
+
+        # elif selected_fm.is_exr_sequence():
+        #     pass
+
+        # else:
+        #     pass
 
     def load_metadata(self):
         # TODO: 이후 구현

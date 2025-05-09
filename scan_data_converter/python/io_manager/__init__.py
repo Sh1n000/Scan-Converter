@@ -5,4 +5,4 @@ from .ui_main_window import IOManagerWindow
 
 __all__ = ["UiBuilder", "IOManagerWindow"]
 
-print("[DEBUG] io_manager 패키지 로딩 완료")
+# print("[DEBUG] io_manager 패키지 로딩 완료")

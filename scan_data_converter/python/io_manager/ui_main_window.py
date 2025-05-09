@@ -3,7 +3,7 @@ from .ui_builder import UiBuilder
 from .path_manager import PathManager
 from .ui_event_handler import IOManagerEventHandler
 
-from pathlib import Path
+# from pathlib import Path
 
 
 class IOManagerWindow(QMainWindow):
