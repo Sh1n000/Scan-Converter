@@ -1,4 +1,6 @@
 from pathlib import Path
+import logging  # Dir Mgr
+from typing import Union
 
 
 class ProjectStructureCreator:
@@ -68,7 +70,7 @@ class ProjectStructureCreator:
                 self._print_tree(p, prefix + "    ")
 
 
-# # 예시 실행
+# # Project Structure 예시 실행
 # if __name__ == "__main__":
 #     project = ProjectStructureCreator("RND")
 #     project.create_main_structure()
@@ -76,3 +78,38 @@ class ProjectStructureCreator:
 #     # project.create_seq("s040")
 #     # project.create_shot("s030", "0010")
 #     project.print_structure_path()
+
+
+class DirectoryManager:
+    """
+    주어진 경로의 부모 디렉토리가 실존할 때에만,
+    자신(또는 파일의 부모)을 생성해 주는 클래스.
+    """
+
+    def __init__(self, logger: logging.Logger = None):
+        self.logger = logger or logging.getLogger(__name__)
+        if not self.logger.handlers:
+            handler = logging.StreamHandler()
+            fmt = "%(asctime)s %(levelname)s %(message)s"
+            handler.setFormatter(logging.Formatter(fmt))
+            self.logger.addHandler(handler)
+        self.logger.setLevel(logging.INFO)
+
+    def ensure_directory(
+        self, path: Union[str, Path], exist_ok: bool = True, parents: bool = True
+    ) -> Path:
+        """
+        path가 가리키는 디렉토리가 없으면 생성하고, Path 객체를 반환.
+        부모 디렉토리가 없으면 ValueError 발생.
+        """
+        p = Path(path)
+        # p가 파일 경로(확장자 포함)라면 부모 폴더를, 아니면 자기 자신을 디렉토리 경로로 본다
+        dir_path = p.parent if p.suffix else p
+
+        parent = dir_path.parent
+        if not parent.exists():
+            raise ValueError(f"유효하지 않은 부모 경로입니다: {parent!r}")
+
+        dir_path.mkdir(parents=parents, exist_ok=exist_ok)
+        self.logger.info(f"Directory ready: {dir_path}")
+        return dir_path

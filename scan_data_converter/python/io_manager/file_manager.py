@@ -4,15 +4,14 @@ from typing import List, Dict, Any
 import pyseq
 import json
 
-# 올바른 Sequence 클래스 임포트
 from pyseq import Sequence
 
 
 class FileManager:
     """
-    1. User가 선택한 원본 Plate 경로 기반 Json 생성
+    1. User가 선택한 원본 Plate 경로 기반 Json 생성 [select_event.json]
        - exr seq / mov 판별
-       - seq / shot name 정해지기전 Json 생성
+       - seq / shot name 정해지기전 상황
     2. Rename 기능
     3. Seq / Shot Name 정해진후 Json 재생성
     """
@@ -51,7 +50,7 @@ class FileManager:
         seqs: List[Sequence] = [s for s in raw if isinstance(s, Sequence)]
         return seqs
 
-    def generate_initial_json(self) -> Dict[str, Any]:
+    def generate_select_event_json(self) -> Dict[str, Any]:
         """exr seq / mov 기반으로 초기 JSON 생성"""
         self.collect_by_extension()
         selected_dir = str(self.path)
@@ -136,8 +135,8 @@ class FileManager:
         return result
 
     def save_initial_json(self, filename: str = "select_event.json") -> Path:
-        """generate_initial_json()를 파일로 저장하고 저장 경로 반환"""
-        data = self.generate_initial_json()
+        """generate_select_event_json()를 파일로 저장하고 저장 경로 반환"""
+        data = self.generate_select_event_json()
         out_path = self.path / filename
         out_path.write_text(self.to_json(data), encoding="utf-8")
         return out_path
