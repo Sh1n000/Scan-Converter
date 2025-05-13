@@ -73,7 +73,7 @@ class FileManager:
                     "org_path": str(
                         self.path / "org" / seq.format(),
                     ),
-                    "jpg_path": str(self.path / "jpg" / "exr_to_jpg.t%04d.jpg"),
+                    "jpg_path": str(self.path / "jpg" / "exr_to_jpg.%04d.jpg"),
                     "excel_path": str(self.path / "no_shot_name.xlsx"),
                 }
                 for seq in seqs[:1]
@@ -86,26 +86,6 @@ class FileManager:
                 }
             )
             return result
-
-        # #  단일 EXR         # exr_files = self.file_dict.get(".exr", [])
-        # if exr_files:
-        #     selected_data = [{"file_name": f.name} for f in exr_files]
-        #     event_info = [
-        #         {
-        #             "org_path": str(self.path / "org" / f.name),
-        #             "jpg_path": str(self.path / "jpg" / "exr_to_jpg.%04d.jpg"),
-        #             "excel_path": str(self.path / "no_shot_name.xlsx"),
-        #         }
-        #         for f in exr_files[:1]
-        #     ]
-        #     result.update(
-        #         {
-        #             "scan_type": "exr_single",
-        #             "selected_data": selected_data,
-        #             "event_info": event_info,
-        #         }
-        #     )
-        #     return result
 
         # MOV 처리
         mov_files = self.file_dict.get(".mov", [])
@@ -144,3 +124,38 @@ class FileManager:
     def to_json(self, data: Any, **kwargs) -> str:
         """JSON 직렬화 헬퍼 메서드"""
         return json.dumps(data, ensure_ascii=False, indent=2, **kwargs)
+
+    def generate_config(self) -> Dict[str, Any]:
+        """
+        MediaConverter에 넘길 config 딕셔너리 생성
+        {
+          "type": "exr_seq" | "mov",
+          "input": "<입력 패스 or 시퀀스 패턴>",
+          "output": "<출력 파일/패턴>",
+          # 필요시 추가 파라미터
+        }
+        """
+        self.collect_by_extension()
+
+        # EXR 시퀀스
+        seqs = self.get_exr_sequences()
+
+        if seqs:
+            seq = seqs[0]
+            head = seq.head()  # ex) "C014C018_230920_RO8N."
+            tail = seq.tail()  # ex) ".exr"
+
+            # 1) 파일명 패턴: e.g. "C014...%07d.exr"
+            pattern = f"{head}%07d{tail}"
+
+            input_pattern = str(self.path / pattern)
+            output_pattern = str(self.path / "jpg" / "exr_to_jpg.%04d.jpg")
+
+            print(f"스타트 프레임: {seq.start()}")
+
+            return {
+                "type": "exr_seq",
+                "input": input_pattern,  # ex) "/show/.../org/C014...%07d.exr"
+                "output": output_pattern,  # ex) "/show/.../jpg/C014...%04d.jpg"
+                "start_frame": seq.start(),  # ex)
+            }

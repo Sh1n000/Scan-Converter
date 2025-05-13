@@ -1,21 +1,24 @@
-from PySide6.QtWidgets import QFileDialog
+from PySide6.QtWidgets import QFileDialog, QMessageBox
+from PySide6.QtCore import QObject
 from pathlib import Path
-
 from managers.file_manager import FileManager
+from converters.media_converter import MediaConverter
 from utils.folder_generator import DirectoryManager
 
 
 class IOManagerEventHandler:
     """UI Event 관리 Class"""
 
-    def __init__(self, ui: dict, path_manager):
-        self.ui = ui
+    def __init__(self, ui_widgets: dict, path_manager):
+        super().__init__()
+        self.ui = ui_widgets
         self.path_mgr = path_manager
+        self._connect_signals()
 
-    def setup_signals(self):
-        # 버튼 클릭 이벤트 연결
-        self.ui["select_btn"].clicked.connect(self.selected_to_convert)
-        self.ui["load_btn"].clicked.connect(self.load_metadata)
+    def _connect_signals(self):
+        #     # 버튼 클릭 이벤트 연결
+        self.ui["btn_select"].clicked.connect(self.selected_to_convert)
+        self.ui["btn_load"].clicked.connect(self.load_metadata)
 
         # 콤보박스 변경 이벤트 연결
         self.ui["project_combo_box"].currentTextChanged.connect(self.project_changed)
@@ -70,7 +73,6 @@ class IOManagerEventHandler:
         self.update_path_line_edit(new_path)
 
     def select_dir(self):
-        """폴더 선택 대화상자를 띄우고 선택된 경로를 Path Line Edit에 반영"""
         options = QFileDialog.Options()
         options |= QFileDialog.ShowDirsOnly
 
@@ -84,7 +86,12 @@ class IOManagerEventHandler:
             self.ui["path_line_edit"].setText(scan_dir_path)
 
     def selected_to_convert(self):
-        """Convert 버튼 클릭 시 폴더 선택 및 초기 변환 준비"""
+        """
+        Convert 버튼 클릭 시
+        1. org 생성후 파일이동
+        2. jpg Convert
+        3. event json 생성
+        """
         self.select_dir()
         selected_p = self.ui["path_line_edit"].text()
         selected_path = Path(selected_p)
@@ -93,24 +100,57 @@ class IOManagerEventHandler:
         if not selected_path:
             return
 
-        # select_event.json 생성
-        selected_fm = FileManager(selected_path)
-        selected_fm.save_initial_json()
-
         # org, jpg 디렉토리 생성
         dm = DirectoryManager()
         org_path = selected_path / "org"
-        dm.ensure_directory(org_path, exist_ok=True, parents=True)
         jpg_path = selected_path / "jpg"
+        dm.ensure_directory(org_path, exist_ok=True, parents=True)
         dm.ensure_directory(jpg_path, exist_ok=True, parents=True)
 
-        # 변환 로직 분기
+        selected_fm = FileManager(selected_path)
+
+        # select_event.json 생성
+        selected_fm.save_initial_json()
+        # config 생성
+        cfg = selected_fm.generate_config()
+
+        # 1) 변환 대상 체크
+        if not (selected_fm.is_exr_sequence() or selected_fm.is_mov()):
+            QMessageBox.information(None, "알림", "변환 대상 파일이 없습니다.")
+            return
+
+        mc = MediaConverter(cfg)
+
         if selected_fm.is_exr_sequence():
-            # EXR 시퀀스 변환 처리
+            try:
+                mc.ffmpeg_exr_to_jpg()  # 또는 mc.run()
+            except Exception as e:
+                err_box = QMessageBox()
+                err_box.setIcon(QMessageBox.Critical)
+                err_box.setWindowTitle("오류 발생")
+                err_box.setText("변환 중 오류가 발생했습니다.")
+                err_box.setInformativeText(str(e))
+                err_box.exec()
+                return
+
+            # exr 파일 이동
+            for exr in selected_fm.file_dict[".exr"]:
+                dm.move_file(exr, org_path / exr.name)
+
+            # 메세지
+            QMessageBox.information(
+                None,
+                "완료",
+                f"1. org 파일 이동 \n org : {org_path} \n 2. jpg 파일 변환 \n jpg : {jpg_path}",
+                QMessageBox.Ok,
+            )
+
+        elif selected_fm.is_mov():  # mov
+            """보류"""
             pass
-        elif selected_fm.is_mov():
-            # MOV 파일 변환 처리
-            pass
+            # mov 파일 이동
+            for mov in selected_fm.file_dict[".mov"]:
+                dm.move_file(mov, org_path / mov.name)
 
     def load_metadata(self):
         """Metadata 로드 처리 (추후 구현)"""

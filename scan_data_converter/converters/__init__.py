@@ -1,10 +1,10 @@
 # converters/__init__.py
-from .media_converter import MediaConverter
-from .media_converter import FFmpegConverter, NukeConverter, ConverterBackend
+from .base import ConverterBackend
+from .ffmpeg_converter import FFmpegConverter
+from .nuke_converter import NukeConverter
 
 __all__ = [
     "ConverterBackend",
     "FFmpegConverter",
     "NukeConverter",
-    "MediaConverter",
 ]

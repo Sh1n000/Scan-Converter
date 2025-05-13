@@ -1,5 +1,6 @@
 from pathlib import Path
 import logging  # Dir Mgr
+import shutil  # Dir Mgr
 from typing import Union
 
 
@@ -113,3 +114,36 @@ class DirectoryManager:
         dir_path.mkdir(parents=parents, exist_ok=exist_ok)
         self.logger.info(f"Directory ready: {dir_path}")
         return dir_path
+
+    def move_file(
+        self, src: Union[str, Path], dst: Union[str, Path], overwrite: bool = False
+    ) -> Path:
+        """
+        src 파일을 dst 위치로 이동(mv)합니다.
+        - dst의 부모 디렉토리가 없으면 생성.
+        - overwrite=False 이고 dst가 존재하면 FileExistsError 발생.
+        - overwrite=True 이면 기존 파일을 덮어쓰고 이동.
+
+        Returns:
+            Path: 이동된 파일의 최종 경로
+        """
+        src_path = Path(src)
+        dst_path = Path(dst)
+        if not src_path.exists() or not src_path.is_file():
+            raise FileNotFoundError(f"이동할 파일이 없습니다: {src_path!r}")
+
+        # dst의 부모 폴더가 있어야 하므로, ensure_directory 호출
+        self.ensure_directory(dst_path.parent, exist_ok=True, parents=True)
+
+        # 덮어쓰기 처리
+        if dst_path.exists():
+            if overwrite:
+                dst_path.unlink()  # 기존 파일 삭제
+            else:
+                raise FileExistsError(f"목적지에 이미 파일이 존재합니다: {dst_path!r}")
+
+        # 실제 이동
+        shutil.move(str(src_path), str(dst_path))
+        # self.logger.info(f"Moved file: {src_path} → {dst_path}")
+        print("이동완료")
+        return dst_path

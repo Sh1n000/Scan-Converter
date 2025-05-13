@@ -30,10 +30,11 @@ class IOManagerWindow(QMainWindow):
 
         # 4) 이벤트 핸들러 연결
         self.event_handler = IOManagerEventHandler(
-            ui=self.ui.widget_dict,
-            path_manager=self.path_mgr,
+            self.ui.widget_dict,
+            self.path_mgr,
         )
-        self.event_handler.setup_signals()
+
+        # self.event_handler._connect_signals()
 
     def setup_ui(self):
         """기본 UI 구성: 경로 입력란 초기값 세팅"""

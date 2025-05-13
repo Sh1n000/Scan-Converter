@@ -1,13 +1,13 @@
 # rez_runner.py
-import subprocess
-import shlex
+
+import subprocess, shlex
 from pathlib import Path
 from typing import Sequence, Union
 
 
 class RezRunner:
     """
-    rez-env로 지정 패키지 환경을 활성화한 뒤, 명령을 실행
+    rez-env로 지정된 패키지 환경을 활성화한 뒤, 명령을 실행하는 클래스
     """
 
     def __init__(self, packages: Sequence[str]):
@@ -16,7 +16,7 @@ class RezRunner:
     def run(
         self, cmd: Union[str, Sequence[str]], cwd: Union[str, Path] = None
     ) -> subprocess.CompletedProcess:
-        # cmd가 문자열이면 shlex.split 으로 안전하게 토큰화
+        # 문자열이면 안전하게 토큰화
         parts = shlex.split(cmd) if isinstance(cmd, str) else list(cmd)
         rez_cmd = ["rez-env", *self.packages, "--", *parts]
         return subprocess.run(

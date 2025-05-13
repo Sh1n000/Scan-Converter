@@ -1,27 +1,14 @@
 # converters/nuke_converter.py
-from pathlib import Path
-from core.rez_runner import RezRunner
+
 from .base import ConverterBackend
+from pathlib import Path
+import subprocess
 
 
 class NukeConverter(ConverterBackend):
-    """Nuke 기반 미디어 변환 백엔드"""
+    def convert(self, input_path: Path, output_path: Path, **kwargs):
+        cmd = ["nuke", "-x", str(input_path), "-o", str(output_path)]
+        subprocess.run(cmd, check=True)
 
-    def __init__(self, rez_pkgs: list[str] = ["nuke", "python-3.9"]):
-        self.rez = RezRunner(rez_pkgs)
 
-    def convert(self, src: Path, dst: Path) -> bool:
-        cmd = [
-            "nuke",
-            "-ix",
-            "/path/to/your_nuke_script.py",
-            "--read",
-            str(src),
-            "--write",
-            str(dst),
-        ]
-        result = self.rez.run(cmd)
-        if result.returncode != 0:
-            print(f"[NukeConverter] Error:\n{result.stderr}")
-            return False
-        return True
+# nuke_path = /opt/Nuke16.0v1/Nuke16.0
