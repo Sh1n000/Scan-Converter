@@ -41,18 +41,6 @@ class PathManager:
             return []
         return sorted([p.name for p in self.scan_path.iterdir() if p.is_dir()])
 
-    # def selected_to_path(self, selected_path: str, arg):
-    #     """User가 선택한 원본 경로기반 경로지정"""
-
-    #     if arg == "org":
-    #         self.org_path = selected_path / "org"
-    #     elif arg == "jpg":
-    #         self.jpg_path = selected_path / "jpg"
-    #     elif arg == "mov_to_exr":
-    #         self.mov_to_exr_path = selected_path / "org" / "mov_to_exr"
-    #     else:
-    #         pass
-
     def seq_shot_to_path(self, seq_shot_path: str, arg):
         """User가 Seq / Shot Name 지정한뒤 경로지정"""
 

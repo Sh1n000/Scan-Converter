@@ -7,7 +7,7 @@ import subprocess
 
 class NukeConverter(ConverterBackend):
     def convert(self, input_path: Path, output_path: Path, **kwargs):
-        cmd = ["nuke", "-x", str(input_path), "-o", str(output_path)]
+        cmd = ["nuke", "-i", str(input_path), "-o", str(output_path)]
         subprocess.run(cmd, check=True)
 
 

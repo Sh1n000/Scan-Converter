@@ -18,7 +18,8 @@ class IOManagerEventHandler:
     def _connect_signals(self):
         #     # 버튼 클릭 이벤트 연결
         self.ui["btn_select"].clicked.connect(self.selected_to_convert)
-        self.ui["btn_load"].clicked.connect(self.load_metadata)
+        # self.ui["btn_load"].clicked.connect(self.load_metadata)
+        self.ui["btn_load"].clicked.connect(self.test_run)
 
         # 콤보박스 변경 이벤트 연결
         self.ui["project_combo_box"].currentTextChanged.connect(self.project_changed)
@@ -88,16 +89,20 @@ class IOManagerEventHandler:
     def selected_to_convert(self):
         """
         Convert 버튼 클릭 시
-        1. org 생성후 파일이동
-        2. jpg Convert
-        3. event json 생성
+        1. org Dir, jpg Dir 생성
+        2. event json 생성
+        3. jpg ffmpeg Converting
+        4. 원본 파일 이동 (org)
         """
         self.select_dir()
         selected_p = self.ui["path_line_edit"].text()
         selected_path = Path(selected_p)
+        selected_fm = FileManager(selected_path)
         print(f"Selected Path: {selected_path}")
 
-        if not selected_path:
+        # Converting 폴더 체크
+        if not (selected_fm.is_exr_sequence() or selected_fm.is_mov()):
+            QMessageBox.information(None, "알림", "변환 대상 파일이 없습니다.")
             return
 
         # org, jpg 디렉토리 생성
@@ -107,17 +112,10 @@ class IOManagerEventHandler:
         dm.ensure_directory(org_path, exist_ok=True, parents=True)
         dm.ensure_directory(jpg_path, exist_ok=True, parents=True)
 
-        selected_fm = FileManager(selected_path)
-
         # select_event.json 생성
         selected_fm.save_initial_json()
         # config 생성
-        cfg = selected_fm.generate_config()
-
-        # 1) 변환 대상 체크
-        if not (selected_fm.is_exr_sequence() or selected_fm.is_mov()):
-            QMessageBox.information(None, "알림", "변환 대상 파일이 없습니다.")
-            return
+        cfg = selected_fm.exr_to_jpg_config()
 
         mc = MediaConverter(cfg)
 
@@ -137,7 +135,7 @@ class IOManagerEventHandler:
             for exr in selected_fm.file_dict[".exr"]:
                 dm.move_file(exr, org_path / exr.name)
 
-            # 메세지
+            # 메세지 박스
             QMessageBox.information(
                 None,
                 "완료",
@@ -146,7 +144,7 @@ class IOManagerEventHandler:
             )
 
         elif selected_fm.is_mov():  # mov
-            """보류"""
+            """MOV는 보류"""
             pass
             # mov 파일 이동
             for mov in selected_fm.file_dict[".mov"]:
@@ -155,3 +153,17 @@ class IOManagerEventHandler:
     def load_metadata(self):
         """Metadata 로드 처리 (추후 구현)"""
         pass
+
+    def test_run(self):
+        """Test Run 처리 (추후 구혋)"""
+        self.select_dir()
+        selected_p = self.ui["path_line_edit"].text()
+        selected_path = Path(selected_p)
+        selected_fm = FileManager(selected_path)
+
+        mtg = selected_fm.set_convert_config("jpg_seq_to_montage")
+        print(mtg)
+        wbm = selected_fm.set_convert_config("jpg_seq_to_webm")
+        print(wbm)
+        mp4 = selected_fm.set_convert_config("jpg_seq_to_gif")
+        print(mp4)
