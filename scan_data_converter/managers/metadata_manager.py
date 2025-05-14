@@ -20,7 +20,7 @@ class MetadataManager:
         version: str,
         org_type: str,
         scan_path: str,
-        clip_name: str,
+        src_name: str,
         metadata: Dict[str, Any],
         thumbnail: str = "",
         check: bool = False,
@@ -33,7 +33,7 @@ class MetadataManager:
             "version": version,
             "type": org_type,
             "scan_path": scan_path,
-            "clip_name": clip_name,
+            "src_name": src_name,
             "metadata": metadata,
         }
         self.records.append(record)
