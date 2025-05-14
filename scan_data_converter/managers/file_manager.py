@@ -13,8 +13,7 @@ class FileManager:
        - exr seq / mov 판별
        - seq / shot name 정해지기전 상황
     2. Rename 기능
-    3. Converting Config 생성
-    4. Seq / Shot Name 정해진후 Json 재생성
+    3. Seq / Shot Name 정해진후 Json 재생성
     """
 
     def __init__(self, path: Path):
@@ -125,70 +124,3 @@ class FileManager:
     def to_json(self, data: Any, **kwargs) -> str:
         """JSON 직렬화 헬퍼 메서드"""
         return json.dumps(data, ensure_ascii=False, indent=2, **kwargs)
-
-    def exr_to_jpg_config(self) -> Dict[str, Any]:
-        """
-        MediaConverter에 넘길 config 딕셔너리 생성
-        {
-          "type": "exr_seq" | "mov",
-          "input": "<입력 패스 or 시퀀스 패턴>",
-          "output": "<출력 파일/패턴>",
-          # 필요시 추가 파라미터
-        }
-        """
-        self.collect_by_extension()
-
-        # EXR 시퀀스
-        seqs = self.get_exr_sequences()
-
-        if seqs:
-            seq = seqs[0]
-            head = seq.head()  # ex) "C014C018_230920_RO8N."
-            tail = seq.tail()  # ex) ".exr"
-
-            # 1) Scan Data Pattern (원본)
-            pattern = f"{head}%07d{tail}"
-
-            input_pattern = str(self.path / pattern)
-            output_pattern = str(self.path / "jpg" / "exr_to_jpg.%04d.jpg")
-
-            return {
-                "type": "exr_seq",
-                "input": input_pattern,  # ex) "/show/.../org/C014...%07d.exr"
-                "output": output_pattern,  # ex) "/show/.../jpg/C014...%04d.jpg"
-                "start_frame": seq.start(),  # 원본 스타트프레임
-            }
-
-    def set_convert_config(self, mode: str):
-        """JPG 시퀀스 기반 Converting Mode"""
-        input_config = self.exr_to_jpg_config()
-        # exr->jpg
-        input_path = input_config["output"]
-
-        # 1. JPG seq -> Montage
-        if mode == "jpg_seq_to_montage":
-            montage_cfg = {}
-            montage_cfg["type"] = "montage"
-            montage_cfg["input"] = input_path
-            montage_cfg["output"] = str(
-                self.path / "montage" / "jpg_to_montage.%04d.jpg"
-            )
-            return montage_cfg
-
-        # 2. JPG seq -> webm
-        elif mode == "jpg_seq_to_webm":
-            webm_cfg = {}
-            webm_cfg["type"] = "webm"
-            webm_cfg["framerate"] = 24
-            webm_cfg["input"] = input_path
-            webm_cfg["output"] = str(self.path / "jpg_to_webm.%04d.webm")
-            return webm_cfg
-
-        # 3. JPG seq -> mp4
-        elif mode == "jpg_seq_to_gif":
-            mp4_cfg = {}
-            mp4_cfg["type"] = "mp4"
-            mp4_cfg["framerate"] = 24
-            mp4_cfg["input"] = input_path
-            mp4_cfg["output"] = str(self.path / "jpg_to_mp4.%04d.mp4")
-            return mp4_cfg

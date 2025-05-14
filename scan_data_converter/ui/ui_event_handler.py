@@ -116,11 +116,11 @@ class IOManagerEventHandler:
         # select_event.json 생성
         selected_fm.save_initial_json()
 
+        # Convert Config 생성
         selected_cfg_factory = ConvertConfigFactory(selected_fm)
 
         if selected_fm.is_exr_sequence():
             try:
-                # EXR→JPG
                 exr_to_jpg = selected_cfg_factory.get("exr_to_jpg")
                 jpg_mc = MediaConverter(exr_to_jpg)
                 jpg_mc.convert()
