@@ -15,17 +15,21 @@ class IOManagerEventHandler:
         super().__init__()
         self.ui = ui_widgets
         self.path_mgr = path_manager
+        # self.scan_list = []
         self._connect_signals()
 
     def _connect_signals(self):
-        #     # 버튼 클릭 이벤트 연결
-        self.ui["btn_select"].clicked.connect(self.selected_to_convert)
-        self.ui["btn_load"].clicked.connect(self.load_metadata)
-        # self.ui["btn_load"].clicked.connect(self.test_run)
-
         # 콤보박스 변경 이벤트 연결
         self.ui["project_combo_box"].currentTextChanged.connect(self.project_changed)
         self.ui["date_combo_box"].currentTextChanged.connect(self.date_changed)
+
+        # 버튼 클릭 이벤트 연결
+        self.ui["btn_select"].clicked.connect(self.selected_to_convert)
+        self.ui["btn_load"].clicked.connect(self.load_metadata)
+        # self.ui["btn_excel_edit"].clicked.connect(self.edit_metadata)
+        # self.ui["btn_excel_save"].clicked.connect(self.save_metadata)
+        # self.ui["btn_collect"].clicked.connect(self.collect_to_shot) # Seq / Shot Name이 지정된 경로 생성 후 Data이동
+        # self.ui["btn_publish"].clicked.connect(self.)
 
         # 초기 프로젝트 리스트 로드
         self.load_project_list()
@@ -56,7 +60,9 @@ class IOManagerEventHandler:
             self.ui["date_combo_box"].addItem("Select Date")
             return
 
+        # "/show/{project}/scan"
         scan_path = self.path_mgr.project_to_path(item, "scan")
+
         self.update_path_line_edit(scan_path)
         self.load_scan_date_list()
 
@@ -107,7 +113,7 @@ class IOManagerEventHandler:
             QMessageBox.information(None, "알림", "변환 대상 파일이 없습니다.")
             return
 
-        # org, jpg 디렉토리 생성
+        """org, jpg 디렉토리 생성"""
         dm = DirectoryManager()
         org_path = selected_path / "org"
         jpg_path = selected_path / "jpg"
@@ -146,8 +152,7 @@ class IOManagerEventHandler:
                 """
                 Meta Data 생성 (JSON & 엑셀)
                 """
-
-                # 1) FileManager 또는 PathManager에서 EXR 파일 리스트 수집
+                # 1) EXR 파일 리스트 수집
                 exr_dict = selected_fm.collect_by_extension()
                 exr_files = exr_dict[".exr"]
 
@@ -205,11 +210,48 @@ class IOManagerEventHandler:
                 dm.move_file(mov, org_path / mov.name)
 
     def load_metadata(self):
-        """Metadata 로드 처리 (추후 구현)"""
+        """
+        - select_to_convert 버튼으로 생성된 엑셀파일 불러오기
+        -  Metadata (엑셀파일)를 Table Wiget의 scan_list에 추가
+
+        scan_list = [
+            {
+            "file_path :"",
+            "thumbnail": thumbnail_path,
+            }
+            ]
+        - 썸네일 UI와 연결
+        """
         pass
 
-    # def test_convert(self):
-    #     input_p =
-    #     conv = FFmpegConverter()
-    #     conv.convert(input_path, output_path)
-    #     conv.convert(input_path, output_path, mode="jpg_to_montage")
+    def edit_metadata(self):
+        """Check Box에 체크되어있는 Metadata를 수정할 수 있도록 엑셀파일 실행"""
+        pass
+
+    def save_metadata(self):
+        """
+        1. Seq / Shot Name이 있는지 없는지 체크  ( Validate )
+        2. 수정된 엑셀파일 저장
+        3. Seq / Shot Name이 지정된 경로 생성
+        4. Seq / Shot Name 지정된 경로로 Data 이동
+        """
+        pass
+
+    def collect_to_shot(self):
+        """
+        1. Seq / Shot Name이 지정된 경로 생성
+        2. Seq / Shot Name 지정된 경로로 Data 이동
+        """
+        pass
+
+    def nuke_set_slate_info(self):
+        """
+        ShotGrid 연결 +  Publish 까지 구현되면
+        Publish할 Slate 썸네일
+
+        Nuke의 Group Node로 Slate 정보 Setting
+        1. Date   2. Project 3. FrameRate
+        4.seq/shot 5. [value firtst_frame]_[value last_frame]([value frame])
+
+        """
+        pass

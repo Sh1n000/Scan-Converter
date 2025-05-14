@@ -18,11 +18,16 @@ class ExifManager:
         """
         file_paths: Path 또는 str 객체의 리스트
         반환값: 각 파일별 exiftool -j 출력(JSON) 파싱 결과 리스트
+        -j : JSON형태로 출력
+
         """
         # 파일 경로를 문자열로 변환
         file_strs = [str(f) for f in file_paths]
+
         cmd = [self.exiftool_path, "-j", "-n", *file_strs]
+
         result = subprocess.run(cmd, capture_output=True, text=True)
+
         if result.returncode != 0:
             raise RuntimeError(f"Exiftool error:\n{result.stderr}")
         try:

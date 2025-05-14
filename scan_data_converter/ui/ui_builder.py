@@ -31,8 +31,8 @@ class UiBuilder(QWidget):
             ("path_line_edit", QLineEdit, ""),
             ("btn_select", QPushButton, "Select to Convert"),
             ("btn_load", QPushButton, "Load Metadata"),
-            ("btn_edit", QPushButton, "Edit"),
-            ("btn_save", QPushButton, "Save"),
+            ("btn_excel_edit", QPushButton, "Edit"),
+            ("btn_excel_save", QPushButton, "Save"),
             ("btn_collect", QPushButton, "Collect"),
             ("btn_publish", QPushButton, "Publish"),
         ]
@@ -70,9 +70,8 @@ class UiBuilder(QWidget):
     def build_main_table(self):
         # Plate List Table: 초기 행에는 체크박스가 표시됨
         table = QTableWidget()
-        initial_rows = 30
-        table.setRowCount(initial_rows)
 
+        """Column Header Setting"""
         headers = [
             "Check",
             "Thumbnail",
@@ -85,10 +84,25 @@ class UiBuilder(QWidget):
         ]
         table.setColumnCount(len(headers))
         table.setHorizontalHeaderLabels(headers)
+        table.verticalHeader().setVisible(False)
+
+        """Row Setting"""
+        # 초반 설정
+        initial_rows = 30
+        table.setRowCount(initial_rows)
 
         self.table = table
         for row in range(initial_rows):
             self.build_table_check(row)
+
+        # Load Metadata btn으로 scan_list를 구성
+        scan_list = []  # User가 선택한 Meta Data
+
+        for meta_data in scan_list:
+            row = scan_list.index(meta_data)
+            table.setRowCount(row + 1)
+            self.build_table_check(row)
+            # self.build_table_thumbnail(row, scan_data["thumbnail"])
 
         return table
 
@@ -100,9 +114,9 @@ class UiBuilder(QWidget):
         self.table.setItem(row, 0, item)
 
     def build_table_thumbnail(self, row: int, thumbnail_path: str):
-        """주어진 행에 썸네일 QLabel 추가"""
+        """"""
         label = QLabel()
-        pixmap = QPixmap(thumbnail_path).scaled(64, 64, Qt.KeepAspectRatio)
+        pixmap = QPixmap(thumbnail_path).scaled(80, 80, Qt.KeepAspectRatio)
         label.setPixmap(pixmap)
         self.table.setCellWidget(row, 1, label)
 
@@ -111,8 +125,8 @@ class UiBuilder(QWidget):
 
         excel_layout = QVBoxLayout()
         excel_layout.addWidget(QLabel("Excel"))
-        excel_layout.addWidget(self.widget_dict["btn_edit"])
-        excel_layout.addWidget(self.widget_dict["btn_save"])
+        excel_layout.addWidget(self.widget_dict["btn_excel_edit"])
+        excel_layout.addWidget(self.widget_dict["btn_excel_save"])
 
         action_layout = QVBoxLayout()
         action_layout.addWidget(QLabel("Action"))

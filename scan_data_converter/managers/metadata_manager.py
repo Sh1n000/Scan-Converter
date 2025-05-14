@@ -1,76 +1,48 @@
-from pathlib import Path
-from dataclasses import dataclass, asdict
-from typing import List, Dict, Union
+# managers/metadata_manager.py
 import json
-import logging
-
-
-@dataclass
-class EXRMetadata:
-    file_path: Path
-    camera: str
-    lens: str
-    shutter: float
-    iso: int
-    # 필요에 따라 필드 추가
+from pathlib import Path
+from typing import List, Dict, Any
 
 
 class MetadataManager:
     """
-    EXR 또는 MOV 메타데이터 레코드를 관리하고 JSON / Excel로 저장하는 클래스
+    추출된 메타데이터와 파일 정보를 모아 최종 JSON 테이블 구조로 관리합니다.
+    records: List of dicts matching UI/Excel row 구조
     """
 
     def __init__(self):
-        self.records: List[EXRMetadata] = []
+        self.records: List[Dict[str, Any]] = []
 
-    def add_record(self, file_path: Path, data: Dict[str, Union[str, int, float]]):
-        """
-        데이터(dict)로부터 EXRMetadata 객체를 생성하여 records에 추가
-        """
-        record = EXRMetadata(
-            file_path=file_path,
-            camera=data.get("Camera", ""),
-            lens=data.get("Lens", ""),
-            shutter=data.get("ShutterSpeed", 0.0),
-            iso=data.get("ISO", 0),
-        )
+    def add_record(
+        self,
+        seq_name: str,
+        shot_name: str,
+        version: str,
+        org_type: str,
+        scan_path: str,
+        clip_name: str,
+        metadata: Dict[str, Any],
+        thumbnail: str = "",
+        check: bool = False,
+    ) -> None:
+        record = {
+            "check": check,
+            "thumbnail": thumbnail,
+            "seq_name": seq_name,
+            "shot_name": shot_name,
+            "version": version,
+            "type": org_type,
+            "scan_path": scan_path,
+            "clip_name": clip_name,
+            "metadata": metadata,
+        }
         self.records.append(record)
-        logging.debug(f"Added metadata record: {record}")
 
-    def save_json(self, base_path: Path, filename: str = "metadata.json") -> Path:
-        """
-        records를 JSON 리스트로 직렬화하여 파일로 저장
-        """
-        json_dir = base_path / "metadata"
-        json_dir.mkdir(parents=True, exist_ok=True)
-        out_file = json_dir / filename
-        # Path 객체를 문자열로 변환하여 JSON 직렬화 가능하게 만듭니다.
-        data = [{**asdict(r), "file_path": str(r.file_path)} for r in self.records]
-        out_file.write_text(
-            json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
-        )
-        logging.info(f"Saved metadata JSON at: {out_file}")
-        return out_file
+    def to_json(self, indent: int = 2) -> str:
+        """현재까지의 레코드를 JSON 문자열로 반환합니다."""
+        return json.dumps(self.records, ensure_ascii=False, indent=indent)
 
-    def save_excel(self, base_path: Path, filename: str = "metadata.xlsx") -> Path:
-        """
-        pandas DataFrame으로 변환하여 Excel 파일로 저장
-        pandas가 설치되어 있어야 합니다.
-        """
-        try:
-            import pandas as pd
-        except ImportError:
-            raise RuntimeError(
-                "pandas is required to save Excel files. `pip install pandas openpyxl` 설치하세요."
-            )
-        # DataFrame 변환 전 Path를 문자열로 변환
-        records_dicts = [
-            {**asdict(r), "file_path": str(r.file_path)} for r in self.records
-        ]
-        df = pd.DataFrame(records_dicts)
-        excel_dir = base_path / "metadata"
-        excel_dir.mkdir(parents=True, exist_ok=True)
-        out_file = excel_dir / filename
-        df.to_excel(out_file, index=False)
-        logging.info(f"Saved metadata Excel at: {out_file}")
-        return out_file
+    def save_json(self, out_path: Path, indent: int = 2) -> None:
+        """파일로 저장합니다."""
+        data = self.to_json(indent=indent)
+        out_path.write_text(data, encoding="utf-8")
