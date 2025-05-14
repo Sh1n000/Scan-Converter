@@ -4,6 +4,7 @@ from pathlib import Path
 from managers.file_manager import FileManager
 from converters.media_converter import MediaConverter
 from utils.folder_generator import DirectoryManager
+from converters.convert_cfg import ConvertConfigFactory
 
 
 class IOManagerEventHandler:
@@ -18,8 +19,8 @@ class IOManagerEventHandler:
     def _connect_signals(self):
         #     # 버튼 클릭 이벤트 연결
         self.ui["btn_select"].clicked.connect(self.selected_to_convert)
-        # self.ui["btn_load"].clicked.connect(self.load_metadata)
-        self.ui["btn_load"].clicked.connect(self.test_run)
+        self.ui["btn_load"].clicked.connect(self.load_metadata)
+        # self.ui["btn_load"].clicked.connect(self.test_run)
 
         # 콤보박스 변경 이벤트 연결
         self.ui["project_combo_box"].currentTextChanged.connect(self.project_changed)
@@ -114,14 +115,16 @@ class IOManagerEventHandler:
 
         # select_event.json 생성
         selected_fm.save_initial_json()
-        # config 생성
-        cfg = selected_fm.exr_to_jpg_config()
 
-        mc = MediaConverter(cfg)
+        selected_cfg_factory = ConvertConfigFactory(selected_fm)
 
         if selected_fm.is_exr_sequence():
             try:
-                mc.ffmpeg_exr_to_jpg()  # 또는 mc.run()
+                # EXR→JPG
+                exr_to_jpg = selected_cfg_factory.get("exr_to_jpg")
+                jpg_mc = MediaConverter(exr_to_jpg)
+                jpg_mc.convert()
+
             except Exception as e:
                 err_box = QMessageBox()
                 err_box.setIcon(QMessageBox.Critical)
@@ -153,17 +156,3 @@ class IOManagerEventHandler:
     def load_metadata(self):
         """Metadata 로드 처리 (추후 구현)"""
         pass
-
-    def test_run(self):
-        """Test Run 처리 (추후 구혋)"""
-        self.select_dir()
-        selected_p = self.ui["path_line_edit"].text()
-        selected_path = Path(selected_p)
-        selected_fm = FileManager(selected_path)
-
-        mtg = selected_fm.set_convert_config("jpg_seq_to_montage")
-        print(mtg)
-        wbm = selected_fm.set_convert_config("jpg_seq_to_webm")
-        print(wbm)
-        mp4 = selected_fm.set_convert_config("jpg_seq_to_gif")
-        print(mp4)
