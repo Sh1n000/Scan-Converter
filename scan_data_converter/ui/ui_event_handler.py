@@ -1,10 +1,11 @@
 from PySide6.QtWidgets import QFileDialog, QMessageBox
-from PySide6.QtCore import QObject
 from pathlib import Path
 from managers.file_manager import FileManager
 from converters.media_converter import MediaConverter
 from utils.folder_generator import DirectoryManager
 from converters.convert_cfg import ConvertConfigFactory
+from managers.exif_manager import ExifManager
+from managers.metadata_manager import MetadataManager
 
 
 class IOManagerEventHandler:
@@ -110,20 +111,60 @@ class IOManagerEventHandler:
         dm = DirectoryManager()
         org_path = selected_path / "org"
         jpg_path = selected_path / "jpg"
+        # filmstrip_path = selected_path / "filmstrip"
+        # montage_path = selected_path / "montage"  #################
+
         dm.ensure_directory(org_path, exist_ok=True, parents=True)
         dm.ensure_directory(jpg_path, exist_ok=True, parents=True)
+        # dm.ensure_directory(filmstrip_path, exist_ok=True, parents=True)
+        # dm.ensure_directory(
+        #     montage_path, exist_ok=True, parents=True
+        # )  ##################
 
         # select_event.json 생성
-        selected_fm.save_initial_json()
+        selected_fm.save_select_event_json()
 
         # Convert Config 생성
         selected_cfg_factory = ConvertConfigFactory(selected_fm)
 
         if selected_fm.is_exr_sequence():
+            """Scan Data = EXR Sequence"""
             try:
                 exr_to_jpg = selected_cfg_factory.get("exr_to_jpg")
                 jpg_mc = MediaConverter(exr_to_jpg)
                 jpg_mc.convert()
+                print("EXR to JPG Conversion Complete")
+
+                # jpg_to_webm = selected_cfg_factory.get("jpg_seq_to_webm")
+                # webm_mc = MediaConverter(jpg_to_webm)
+                # webm_mc.convert()
+
+                # jpg_to_mp4 = selected_cfg_factory.get("jpg_seq_to_mp4")
+                # mp4_mc = MediaConverter(jpg_to_mp4)
+                # mp4_mc.convert()
+
+                """
+                Meta Data 생성 (JSON & 엑셀)
+                """
+
+                # 1) FileManager 또는 PathManager에서 EXR 파일 리스트 수집
+                exr_dict = selected_fm.collect_by_extension()
+                exr_files = exr_dict[".exr"]
+
+                # 2) ExifManager로 메타데이터 추출
+                exif_mgr = ExifManager()
+                raw_meta_list = exif_mgr.extract_metadata(exr_files)
+                # print(f"Raw Meta List: {raw_meta_list}")
+
+                # 3) MetadataManager에 맵핑 & 저장
+                meta_mgr = MetadataManager()
+                for path, meta in zip(exr_files, raw_meta_list):
+                    meta_mgr.add_record(path, meta)
+
+                # 4) JSON 또는 Excel로 출력
+                meta_mgr.save_json(selected_path)
+                # 또는
+                meta_mgr.save_excel(selected_path)
 
             except Exception as e:
                 err_box = QMessageBox()
@@ -138,11 +179,21 @@ class IOManagerEventHandler:
             for exr in selected_fm.file_dict[".exr"]:
                 dm.move_file(exr, org_path / exr.name)
 
+            # #################
+            # jpg_to_montage = selected_cfg_factory.get("jpg_seq_to_tile_montage")
+            # montage_mc = MediaConverter(jpg_to_montage)
+            # montage_mc.convert()
+
+            # # Filmstrip 만들기
+            # film_cfg = selected_cfg_factory.get("jpg_seq_to_filmstrip", columns=5)
+            # film_mc = MediaConverter(film_cfg)
+            # film_mc.convert()
+
             # 메세지 박스
             QMessageBox.information(
                 None,
                 "완료",
-                f"1. org 파일 이동 \n org : {org_path} \n 2. jpg 파일 변환 \n jpg : {jpg_path}",
+                f"1. org 파일 이동 \n org : {org_path} \n 2. jpg 파일 변환 \n jpg : {jpg_path} \n 3. 메타 데이터 생성 \n json/excel : {selected_path}/metadata",
                 QMessageBox.Ok,
             )
 
@@ -156,3 +207,9 @@ class IOManagerEventHandler:
     def load_metadata(self):
         """Metadata 로드 처리 (추후 구현)"""
         pass
+
+    # def test_convert(self):
+    #     input_p =
+    #     conv = FFmpegConverter()
+    #     conv.convert(input_path, output_path)
+    #     conv.convert(input_path, output_path, mode="jpg_to_montage")

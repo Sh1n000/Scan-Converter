@@ -114,12 +114,18 @@ class FileManager:
         result.update({"scan_type": "unknown", "selected_data": [], "event_info": []})
         return result
 
-    def save_initial_json(self, filename: str = "select_event.json") -> Path:
+    def save_select_event_json(self, filename: str = "select_event.json") -> Path:
         """generate_select_event_json()를 파일로 저장하고 저장 경로 반환"""
         data = self.generate_select_event_json()
         out_path = self.path / filename
         out_path.write_text(self.to_json(data), encoding="utf-8")
         return out_path
+
+    def save_initial_json(self, data: dict):
+        json_dir = self.path
+        # json_dir.mkdir(parents=True, exist_ok=True)
+        out_file = json_dir / "initial_metadata.json"
+        out_file.write_text(self.to_json(data), encoding="utf-8")
 
     def to_json(self, data: Any, **kwargs) -> str:
         """JSON 직렬화 헬퍼 메서드"""
