@@ -1,18 +1,20 @@
+# managers/convert_config_factory.py
+
 from managers.file_manager import FileManager
 from pathlib import Path
 
 
 class ConvertConfigFactory:
     def __init__(self, file_manager: FileManager):
-        """
-        FFmpeg Convert Config Factory
-        1. exr to jpg
-        2. jpg to montage
-        3. jpg to webm
-        4. jpg to mp4 <- Rez 사용 예정
-        """
         self.fm = file_manager
-        self.path = file_manager.path
+        self.base = Path(self.fm.path)  # 선택된 경로
+        self.org_dir = self.base / "org"
+        self.jpg_dir = self.base / "jpg"
+        self.montage_dir = self.base / "montage"
+        self.filmstrip_dir = self.base / "filmstrip"
+        # 영상파일들은 폴더 지정 X
+        self.webm_dir = self.base
+        self.mp4_dir = self.base
 
     def exr_to_jpg(self) -> dict:
         seqs = self.fm.get_exr_sequences()
@@ -20,83 +22,180 @@ class ConvertConfigFactory:
             raise RuntimeError("EXR 시퀀스를 찾을 수 없습니다.")
         seq = seqs[0]
         head, tail = seq.head(), seq.tail()
-        pattern = f"{head}%07d{tail}"
+
         return {
-            "type": "exr_to_jpg",
-            "input": str(self.path / pattern),
-            "output": str(self.path / "jpg" / "exr_to_jpg.%04d.jpg"),
-            "start_frame": seq.start(),
+            "input_pattern": str(self.base / f"{head}%07d{tail}"),
+            "output_pattern": str(self.jpg_dir / f"{head}%04d.jpg"),
+            "start_number": seq.start(),
+            "options": [],  # 추가 옵션이 필요하면 여기에
         }
 
-    def jpg_seq_to_tile_montage(self) -> dict:
-        exr_cfg = self.exr_to_jpg()
-        pattern = exr_cfg["output"]  # "/…/jpg/exr_to_jpg.%04d.jpg"
+    def jpg_to_webm(self, framerate: int = 24) -> dict:
+        """JPG 시퀀스 정보 얻기"""
+        jpg_files = sorted((self.base / "jpg").glob("*.jpg"))
+        if not jpg_files:
+            raise RuntimeError("JPG 시퀀스를 찾을 수 없습니다.")
+
+        # 파일명에서 번호 분리 (e.g. '...0001.jpg' -> 1)
+        first = jpg_files[0].stem.split(".")[-1]
+        start = int(first)
+
+        """Naming"""
+        head = jpg_files[0].stem.rsplit(".", 1)[0]  # 'A206C024_240315_R29Q'
+        output_name = "jpg_to_webm"
+
         return {
-            "type": "jpg_seq_to_tile_montage",
-            # FFmpeg -i 에 줄 시퀀스 패턴
-            "input_pattern": pattern,
-            "output": str(self.path / "montage" / "jpg_to_tile_montage.jpg"),
-            "tile": "5x5",
-            "qscale": 2,
-            # "start_frame": exr_cfg.get("start_frame", 1),
+            "input_pattern": str(self.jpg_dir / f"{head}.%04d.jpg"),
+            "output_pattern": str(self.webm_dir / f"{output_name}.webm"),
+            "start_number": start,
+            "options": [
+                "-framerate",
+                str(framerate),
+                "-c:v",
+                "libvpx-vp9",
+                "-crf",
+                "30",
+                "-b:v",
+                "0",
+            ],
         }
 
-    # def jpg_seq_to_tile_montage(self) -> dict:
-    #     """IMageMagick montage"""
-    #     exr_cfg = self.exr_to_jpg()
-    #     jpg_dir = Path(exr_cfg["output"]).parent
+    def jpg_to_mp4(self, framerate: int = 24) -> dict:
+        jpg_files = sorted(self.jpg_dir.glob("*.jpg"))
 
+        if not jpg_files:
+            raise RuntimeError("JPG 시퀀스를 찾을 수 없습니다.")
+        head, num = jpg_files[0].stem.rsplit(".", 1)
+        start = int(num)
+        output_name = "jpg_to_mp4"
+
+        return {
+            "input_pattern": str(self.jpg_dir / f"{head}.%04d.jpg"),
+            "output_pattern": str(self.mp4_dir / f"{output_name}.mp4"),
+            "start_number": start,
+            "options": [
+                "-framerate",
+                str(framerate),
+                "-c:v",
+                "libx264",
+                "-pix_fmt",
+                "yuv420p",
+            ],
+        }
+
+    def org_to_mp4(self, framerate: int = 24) -> dict:
+        """이동된 org 경로 기반 EXR -> Mp4"""
+        # org_files = sorted(self.org_dir.glob("*.exr"))
+
+        # if not org_files:
+        #     raise RuntimeError("exr 시퀀스를 찾을 수 없습니다.")
+        # head, num = org_files[0].stem.rsplit(".", 1)
+        # start = int(num)
+        # output_name = "org_to_mp4"
+
+        # return {
+        #     "input_pattern": str(self.org_dir / f"{head}.%04d.jpg"),
+        #     "output_pattern": str(self.mp4_dir / f"{output_name}.mp4"),
+        #     "start_number": start,
+        #     "options": [
+        #         "-framerate",
+        #         str(framerate),
+        #         "-c:v",
+        #         "libx264",
+        #         "-pix_fmt",
+        #         "yuv420p",
+        #     ],
+        # }
+
+        """org 폴더의 EXR 시퀀스를 직접 MP4로 변환"""
+        org_fm = FileManager(self.org_dir)
+        seqs = org_fm.get_exr_sequences()
+        if not seqs:
+            raise RuntimeError("org 폴더에서 EXR 시퀀스를 찾을 수 없습니다.")
+
+        # pyseq.Sequence 객체에서 head, tail, start_number 확보
+        seq = seqs[0]
+        head, tail = (
+            seq.head(),
+            seq.tail(),
+        )  # ex: head="C014C018_240315_R29Q.", tail=".exr"
+        start = seq.start()  # ex: 1 or 1001
+        output_name = "org_to_mp4"
+        return {
+            # ex: "/.../org/C014C018_240315_R29Q.%07d.exr"
+            "input_pattern": str(self.org_dir / f"{head}%07d{tail}"),
+            # 하나의 MP4 파일로 출력
+            "output_pattern": str(self.base / f"{output_name}.mp4"),
+            "start_number": start,
+            "options": [
+                "-framerate",
+                str(framerate),
+                "-c:v",
+                "libx264",
+                "-pix_fmt",
+                "yuv420p",
+            ],
+        }
+
+    # def jpg_seq_to_tile_montage(
+    #     self,
+    #     cols: int = 5,
+    #     rows: int = 5,
+    #     framerate: int = 24,
+    #     qscale: int = 2,
+    # ) -> dict:
+    #     cfg = self.exr_to_jpg()
+    #     head = Path(cfg["output_pattern"]).stem.split("%")[0]
     #     return {
-    #         "type": "jpg_seq_to_montage",
-    #         "input": str(jpg_dir),
-    #         "output": str(self.path / "montage" / "jpg_to_tile_montage.jpg"),
-    #         "tile": "5x5",
-    #         "geometry": "+2+2",
+    #         "input_pattern": cfg["output_pattern"],
+    #         "output_pattern": str(self.montage_dir / f"{head}_montage.jpg"),
+    #         "start_number": cfg["start_number"],
+    #         "options": [
+    #             "-framerate",
+    #             str(framerate),
+    #             "-filter_complex",
+    #             f"tile={cols}x{rows}",
+    #             "-qscale:v",
+    #             str(qscale),
+    #             "-vsync",
+    #             "0",
+    #         ],
     #     }
 
-    def jpg_seq_to_webm(self, framerate: int = 24) -> dict:
-        cfg = self.exr_to_jpg()
-        return {
-            **cfg,
-            "type": "jpg_seq_to_webm",
-            "input": cfg["output"],
-            "output": str(self.path / "jpg_to_webm.%04d.webm"),
-            "framerate": framerate,
-        }
-
-    def jpg_seq_to_mp4(self, framerate: int = 24) -> dict:
-        cfg = self.exr_to_jpg()
-        return {
-            **cfg,
-            "type": "jpg_seq_to_mp4",
-            "input": cfg["output"],
-            "output": str(self.path / "jpg_to_mp4.%04d.mp4"),
-            "framerate": framerate,
-        }
-
-    def jpg_seq_to_filmstrip(self, columns: int = 5) -> dict:
-        # 1) EXR→JPG 설정 가져오기
-        exr_cfg = self.exr_to_jpg()
-        return {
-            "type": "jpg_seq_to_filmstrip",
-            # FFmpeg -i 에 넘길 시퀀스 패턴 (e.g. “…/%04d.jpg”)
-            "input_pattern": exr_cfg["output"],
-            # 결과물 경로
-            "output": str(self.path / "filmstrip" / f"filmstrip_{columns}x1.jpg"),
-            # 한 줄에 넣을 프레임 개수
-            "columns": columns,
-            # 필요 시 리사이즈
-            "scale": None,
-        }
+    # def jpg_seq_to_filmstrip(
+    #     self,
+    #     columns: int = 5,
+    #     scale: str = None,
+    #     framerate: int = 24,
+    # ) -> dict:
+    #     cfg = self.exr_to_jpg()
+    #     head = Path(cfg["output_pattern"]).stem.split("%")[0]
+    #     filters = []
+    #     if scale:
+    #         filters.append(f"scale={scale}")
+    #     filters.append(f"tile={columns}x1")
+    #     return {
+    #         "input_pattern": cfg["output_pattern"],
+    #         "output_pattern": str(self.filmstrip_dir / f"{head}_filmstrip.jpg"),
+    #         "start_number": None,
+    #         "options": [
+    #             "-framerate",
+    #             str(framerate),
+    #             "-filter_complex",
+    #             ",".join(filters),
+    #             "-frames:v",
+    #             "1",
+    #         ],
+    #     }
 
     def get(self, mode: str, **kwargs) -> dict:
-        """mode 이름으로 해당 메서드를 호출"""
         mapping = {
             "exr_to_jpg": self.exr_to_jpg,
-            "jpg_seq_to_tile_montage": self.jpg_seq_to_tile_montage,
-            "jpg_seq_to_filmstrip": lambda: self.jpg_seq_to_filmstrip(**kwargs),
-            "jpg_seq_to_webm": lambda: self.jpg_seq_to_webm(**kwargs),
-            "jpg_seq_to_mp4": lambda: self.jpg_seq_to_mp4(**kwargs),
+            "jpg_to_webm": lambda: self.jpg_to_webm(**kwargs),
+            "jpg_to_mp4": lambda: self.jpg_to_mp4(**kwargs),
+            "org_to_mp4": lambda: self.org_to_mp4(**kwargs),
+            # "jpg_seq_to_tile_montage": lambda: self.jpg_seq_to_tile_montage(**kwargs),
+            # "jpg_seq_to_filmstrip": lambda: self.jpg_seq_to_filmstrip(**kwargs),
         }
         if mode not in mapping:
             raise ValueError(f"Unknown mode: {mode}")

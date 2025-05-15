@@ -73,14 +73,14 @@ class UiBuilder(QWidget):
 
         """Column Header Setting"""
         headers = [
-            "Check",
-            "Thumbnail",
+            "check",
+            "thumbnail",
             "seq_name",
             "shot_name",
             "version",
             "type",
             "scan_path",
-            "Metadata",
+            "metadata",
         ]
         table.setColumnCount(len(headers))
         table.setHorizontalHeaderLabels(headers)
