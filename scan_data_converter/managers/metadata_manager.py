@@ -34,6 +34,7 @@ class MetadataManager:
             "type": org_type,
             "scan_path": scan_path,
             "src_name": src_name,
+            "resolution": f"{width}x{height}",
             "metadata": metadata,
         }
         self.records.append(record)

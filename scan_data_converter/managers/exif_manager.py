@@ -26,8 +26,8 @@ class ExifManager:
         except json.JSONDecodeError as e:
             raise RuntimeError(f"JSON 파싱 오류: {e}\n출력:\n{result.stdout}")
 
-        # SourceFile 필드를 키로 사용하고 나머지를 메타데이터로 저장
         metadata: Dict[str, Dict[str, Any]] = {}
+
         for item in raw_list:
             source = item.pop("SourceFile", None)
             if source:

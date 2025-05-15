@@ -11,7 +11,7 @@ class ExcelExporter:
         wb = Workbook()
         ws = wb.active
         # 헤더
-        ws.append(["Filename", "Camera", "Lens", "Shutter", "ISO", ...])
+        ws.append(["Thumbnail", "", "", "", "", ...])
         for r in records:
             ws.append([r.file_path.name, r.camera, r.lens, r.shutter, r.iso, ...])
         wb.save(out_path)

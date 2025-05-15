@@ -17,24 +17,22 @@ class IOManagerWindow(QMainWindow):
         self.setWindowTitle("I/O Manager")
         self.setMinimumSize(1200, 800)
 
-        # 1) UI 빌더 초기화
+        # UI 빌더 초기화
         self.ui = UiBuilder()
         self.setCentralWidget(self.ui)
 
-        # 2) PathManager 초기화 (show_root 는 Path 객체로 관리)
+        # PathManager 초기화 (show_root 는 Path 객체로 관리)
         show_root = Path("/show")
         self.path_mgr = PathManager(show_root)
 
-        # 3) UI 초기값 세팅
-        self.setup_ui()
-
-        # 4) 이벤트 핸들러 연결
+        # 이벤트 핸들러 연결
         self.event_handler = IOManagerEventHandler(
             self.ui.widget_dict,
             self.path_mgr,
         )
 
-        # self.event_handler._connect_signals()
+        # UI 초기값 세팅
+        self.setup_ui()
 
     def setup_ui(self):
         """기본 UI 구성: 경로 입력란 초기값 세팅"""

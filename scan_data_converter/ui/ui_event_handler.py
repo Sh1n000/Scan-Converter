@@ -7,6 +7,7 @@ from converters.convert_cfg import ConvertConfigFactory
 from managers.exif_manager import ExifManager
 from managers.metadata_manager import MetadataManager
 from converters.mp4_converter import MP4Converter
+from PySide6.QtCore import Qt
 
 
 class IOManagerEventHandler:
@@ -16,6 +17,7 @@ class IOManagerEventHandler:
         super().__init__()
         self.ui = ui_widgets
         self.path_mgr = path_manager
+        self.table = ui_widgets["table"]
         # self.scan_list = []
         self._connect_signals()
 
@@ -27,6 +29,8 @@ class IOManagerEventHandler:
         # 버튼 클릭 이벤트 연결
         self.ui["btn_select"].clicked.connect(self.selected_to_convert)
         self.ui["btn_load"].clicked.connect(self.load_metadata)
+        self.ui["btn_check_all"].clicked.connect(self.check_all)
+        self.ui["btn_uncheck_all"].clicked.connect(self.uncheck_all)
         # self.ui["btn_excel_edit"].clicked.connect(self.edit_metadata)
         # self.ui["btn_excel_save"].clicked.connect(self.save_metadata)
         # self.ui["btn_collect"].clicked.connect(self.collect_to_shot) # Seq / Shot Name이 지정된 경로 생성 후 Data이동
@@ -127,7 +131,6 @@ class IOManagerEventHandler:
         dm.ensure_directory(jpg_path, exist_ok=True, parents=True)
         # dm.ensure_directory(filmstrip_path, exist_ok=True, parents=True)
         # dm.ensure_directory(montage_path, exist_ok=True, parents=True)
-        # dm.ensure_directory(mp4_path, exist_ok=True, parents=True)
 
         # select_event.json 생성
         selected_fm.save_select_event_json()
@@ -202,13 +205,15 @@ class IOManagerEventHandler:
             webm_mc.convert()
             print("JPG to WEBM Complete")
 
-            # — MP4 (Rez 환경 x264, ffmpeg,  Python 스크립트) —
+            """JPG to MP4 (Rez 환경 x264, ffmpeg,  Python 스크립트)"""
 
             jpg_to_mp4 = selected_cfg_factory.get("jpg_to_mp4")
             print("jpg_to_MP4 Config: ", jpg_to_mp4)
             mp4_mc = MP4Converter(jpg_to_mp4)
             mp4_mc.convert()
             print("JPG to MP4 Complete (rez-env)")
+
+            """Org to MP4 (Rez 환경 x264, ffmpeg,  Python 스크립트)"""
 
             org_to_mp4 = selected_cfg_factory.get("org_to_mp4")
             print("org_to_MP4 Config: ", org_to_mp4)
@@ -258,7 +263,7 @@ class IOManagerEventHandler:
         pass
 
     def edit_metadata(self):
-        """Check Box에 체크되어있는 Metadata를 수정할 수 있도록 엑셀파일 실행"""
+        """Check Box에 체크되어있는 Metadata를 수정할 수 있도록 엑셀파일 관련 프로그램 실행"""
         pass
 
     def save_metadata(self):
@@ -289,3 +294,19 @@ class IOManagerEventHandler:
 
         """
         pass
+
+    def check_all(self):
+        """모든 행의 체크박스를 체크 상태로 변경"""
+        for row in range(self.table.rowCount()):
+            item = self.table.item(row, 0)
+            if item:
+                item.setCheckState(Qt.Checked)
+        print("check_all")
+
+    def uncheck_all(self):
+        """모든 행의 체크박스를 언체크 상태로 변경"""
+        for row in range(self.table.rowCount()):
+            item = self.table.item(row, 0)
+            if item:
+                item.setCheckState(Qt.Unchecked)
+        print("uncheck_all")

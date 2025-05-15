@@ -8,6 +8,8 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QHBoxLayout,
     QComboBox,
+    QHeaderView,
+    QSizePolicy,
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap
@@ -35,6 +37,8 @@ class UiBuilder(QWidget):
             ("btn_excel_save", QPushButton, "Save"),
             ("btn_collect", QPushButton, "Collect"),
             ("btn_publish", QPushButton, "Publish"),
+            ("btn_check_all", QPushButton, "Check All"),
+            ("btn_uncheck_all", QPushButton, "Uncheck All"),
         ]
         self.widget_dict = {}
 
@@ -48,16 +52,60 @@ class UiBuilder(QWidget):
         # 레이아웃 구성
         main_layout.addLayout(self.build_header_layout1())
         main_layout.addLayout(self.build_header_layout2())
+        main_layout.addLayout(self.build_header_layout3())
         main_layout.addWidget(self.build_main_table())
         main_layout.addLayout(self.build_bottom_layout())
 
     def build_header_layout1(self):
+        # 전체 레이아웃
         layout = QHBoxLayout()
-        layout.addWidget(self.widget_dict["project_label"])
-        layout.addWidget(self.widget_dict["project_combo_box"])
-        layout.addWidget(self.widget_dict["date_label"])
-        layout.addWidget(self.widget_dict["date_combo_box"])
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(5)  # Project와 Date 블록 사이만 띄우기
+
+        project_lay = self.build_project_layout()
+        layout.addLayout(project_lay)
+
+        date_lay = self.build_date_layout()
+        layout.addLayout(date_lay)
+
+        layout.addStretch()  # 공간 채우기
+
         return layout
+
+    def build_project_layout(self):
+        project_lay = QHBoxLayout()
+        project_lay.setContentsMargins(0, 0, 0, 0)
+        project_lay.setSpacing(2)
+
+        pro_lbl = self.widget_dict["project_label"]
+        pro_lbl.setFixedWidth(60)
+        pro_lbl.setMargin(0)  # 레이블 텍스트 주변 공백 없애기
+
+        pro_cmb = self.widget_dict["project_combo_box"]
+        pro_cmb.setFixedWidth(150)
+        pro_cmb.setStyleSheet("padding:0px; margin:0px;")  # 내부 여백 최소화
+
+        project_lay.addWidget(pro_lbl)
+        project_lay.addWidget(pro_cmb)
+
+        return project_lay
+
+    def build_date_layout(self):
+        date_lay = QHBoxLayout()
+        date_lay.setContentsMargins(0, 0, 0, 0)
+        date_lay.setSpacing(2)
+
+        date_lbl = self.widget_dict["date_label"]
+        date_lbl.setFixedWidth(40)
+        date_lbl.setMargin(0)
+
+        date_cmb = self.widget_dict["date_combo_box"]
+        date_cmb.setFixedWidth(150)
+        date_cmb.setStyleSheet("padding:0px; margin:0px;")
+
+        date_lay.addWidget(date_lbl)
+        date_lay.addWidget(date_cmb)
+        return date_lay
 
     def build_header_layout2(self):
         layout = QHBoxLayout()
@@ -67,9 +115,46 @@ class UiBuilder(QWidget):
         layout.addWidget(self.widget_dict["btn_load"])
         return layout
 
+    def build_header_layout3(self):
+        header_layout = QHBoxLayout()
+        check_layout = self.build_check_layout()
+        check_layout.setSizeConstraint(QHBoxLayout.SetFixedSize)
+
+        header_layout.addLayout(check_layout)
+
+        header_layout.addStretch()
+
+        return header_layout
+
+    def build_check_layout(self):
+        layout = QHBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(5)
+
+        btn_all = self.widget_dict["btn_check_all"]
+        btn_none = self.widget_dict["btn_uncheck_all"]
+
+        btn_all.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        btn_none.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        btn_all.setFixedSize(80, 30)
+        btn_none.setFixedSize(80, 30)
+
+        layout.addWidget(btn_all)
+        layout.addWidget(btn_none)
+        return layout
+
+    def build_table_check(self, row: int):
+        """주어진 행에 체크박스 셀을 추가"""
+        item = QTableWidgetItem()
+        item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
+        item.setCheckState(Qt.Unchecked)
+        item.setTextAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+        self.table.setItem(row, 0, item)
+
     def build_main_table(self):
-        # Plate List Table: 초기 행에는 체크박스가 표시됨
         table = QTableWidget()
+        # widget_dict 에 'table' 키로 등록
+        self.widget_dict["table"] = table
 
         """Column Header Setting"""
         headers = [
@@ -80,11 +165,27 @@ class UiBuilder(QWidget):
             "version",
             "type",
             "scan_path",
-            "metadata",
+            "resoliution",
         ]
         table.setColumnCount(len(headers))
         table.setHorizontalHeaderLabels(headers)
         table.verticalHeader().setVisible(False)
+
+        table.horizontalHeader().setSectionResizeMode(
+            0, QHeaderView.ResizeToContents
+        )  # 체크박스 셀
+        """Table Size Setting"""
+        size_rate = 1.3
+        default_row_height = 90 * size_rate
+        table.verticalHeader().setDefaultSectionSize(default_row_height)
+
+        table.horizontalHeader().setSectionResizeMode(
+            1, QHeaderView.Fixed
+        )  # Thumbnail 셀
+        table.setColumnWidth(1, 160 * size_rate)
+        # 나머지 텍스트 열은 화면 꽉 채우기
+        for col in range(2, len(headers)):
+            table.horizontalHeader().setSectionResizeMode(col, QHeaderView.Stretch)
 
         """Row Setting"""
         # 초반 설정
@@ -106,13 +207,6 @@ class UiBuilder(QWidget):
 
         return table
 
-    def build_table_check(self, row: int):
-        """주어진 행에 체크박스 셀을 추가"""
-        item = QTableWidgetItem()
-        item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
-        item.setCheckState(Qt.Unchecked)
-        self.table.setItem(row, 0, item)
-
     def build_table_thumbnail(self, row: int, thumbnail_path: str):
         """"""
         label = QLabel()
@@ -122,17 +216,26 @@ class UiBuilder(QWidget):
 
     def build_bottom_layout(self):
         layout = QHBoxLayout()
-
-        excel_layout = QVBoxLayout()
-        excel_layout.addWidget(QLabel("Excel"))
-        excel_layout.addWidget(self.widget_dict["btn_excel_edit"])
-        excel_layout.addWidget(self.widget_dict["btn_excel_save"])
-
-        action_layout = QVBoxLayout()
-        action_layout.addWidget(QLabel("Action"))
-        action_layout.addWidget(self.widget_dict["btn_collect"])
-        action_layout.addWidget(self.widget_dict["btn_publish"])
-
+        """Excel Layout"""
+        excel_layout = self.build_excel_layout()
         layout.addLayout(excel_layout)
+
+        """Action Layout"""
+        action_layout = self.build_action_layout()
         layout.addLayout(action_layout)
+
+        return layout
+
+    def build_excel_layout(self):
+        layout = QVBoxLayout()
+        layout.addWidget(QLabel("Excel"))
+        layout.addWidget(self.widget_dict["btn_excel_edit"])
+        layout.addWidget(self.widget_dict["btn_excel_save"])
+        return layout
+
+    def build_action_layout(self):
+        layout = QVBoxLayout()
+        layout.addWidget(QLabel("Action"))
+        layout.addWidget(self.widget_dict["btn_collect"])
+        layout.addWidget(self.widget_dict["btn_publish"])
         return layout

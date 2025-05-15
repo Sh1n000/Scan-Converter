@@ -84,29 +84,6 @@ class ConvertConfigFactory:
         }
 
     def org_to_mp4(self, framerate: int = 24) -> dict:
-        """이동된 org 경로 기반 EXR -> Mp4"""
-        # org_files = sorted(self.org_dir.glob("*.exr"))
-
-        # if not org_files:
-        #     raise RuntimeError("exr 시퀀스를 찾을 수 없습니다.")
-        # head, num = org_files[0].stem.rsplit(".", 1)
-        # start = int(num)
-        # output_name = "org_to_mp4"
-
-        # return {
-        #     "input_pattern": str(self.org_dir / f"{head}.%04d.jpg"),
-        #     "output_pattern": str(self.mp4_dir / f"{output_name}.mp4"),
-        #     "start_number": start,
-        #     "options": [
-        #         "-framerate",
-        #         str(framerate),
-        #         "-c:v",
-        #         "libx264",
-        #         "-pix_fmt",
-        #         "yuv420p",
-        #     ],
-        # }
-
         """org 폴더의 EXR 시퀀스를 직접 MP4로 변환"""
         org_fm = FileManager(self.org_dir)
         seqs = org_fm.get_exr_sequences()

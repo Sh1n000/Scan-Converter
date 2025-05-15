@@ -7,128 +7,27 @@ import subprocess
 
 class FFmpegConverter(ConverterBackend):
     def convert(
-        self, input_path: Path, output_path: Path, mode: str = "exr_to_jpg", **kwargs
-    ):
-        """
-        mode: "exr_to_jpg", "jpg_to_tile_montage", "jpg_to_filmstrip", "jpg_to_mp4", "jpg_to_webm"
-        """
-        if mode == "exr_to_jpg":
-            return self.exr_to_jpg(input_path, output_path, **kwargs)
-        elif mode == "jpg_to_tile_montage":
-            return self.jpg_to_tile_montage(input_path, output_path, **kwargs)
-        elif mode == "jpg_to_filmstrip":
-            return self.jpg_to_filmstrip(input_path, output_path, **kwargs)
-        elif mode == "jpg_to_mp4":
-            return self.jpg_to_mp4(input_path, output_path, **kwargs)
-        elif mode == "jpg_to_webm":
-            return self.jpg_to_webm(input_path, output_path, **kwargs)
-        else:
-            raise ValueError(f"Unknown mode: {mode}")
-
-    def exr_to_jpg(
         self,
         input_pattern: Path,
         output_pattern: Path,
-        start_number: int = 1001,
-        **kwargs,
+        start_number: Optional[int] = None,
+        options: Optional[list[str]] = None,
     ):
-        options = kwargs.get("options", [])
-        cmd = [
-            "ffmpeg",
-            "-start_number",
-            str(start_number),
-            "-i",
-            str(input_pattern),
-            *options,
-            str(output_pattern),
-        ]
-        subprocess.run(cmd, check=True)
+        """
+        범용 FFmpeg 변환 메서드.
+        - input_pattern: 프레임 시퀀스/단일 파일 패턴
+        - output_pattern: 출력 파일 패턴
+        - start_number: 시퀀스 시작 번호 (없어도 됨)
+        - options: ffmpeg 추가 옵션 리스트
+        """
+        cmd: list[str] = ["ffmpeg"]
 
-    def jpg_to_tile_montage(
-        self,
-        input_pattern: Path,
-        output_path: Path,
-        cols: int = 5,
-        rows: int = 5,
-        start_number: int = 1,
-    ):
-        cmd = [
-            "ffmpeg",
-            "-start_number",
-            str(start_number),
-            "-i",
-            str(input_pattern),
-            "-vf",
-            f"tile={cols}x{rows}",
-            str(output_path),
-        ]
-        subprocess.run(cmd, check=True)
+        if start_number is not None:
+            cmd += ["-start_number", str(start_number)]
 
-    def jpg_to_filmstrip(
-        self,
-        input_pattern: Path,
-        output_path: Path,
-        cols: int = 5,
-        scale: Optional[str] = None,
-        framerate: int = 24,
-    ):
-        # filmstrip: 한 줄로 cols 장을 나열
-        # 1) scale 필터 (선택)
-        # 2) tile 필터로 cols × 1 타일 생성
-        filters: list[str] = []
-        if scale:
-            filters.append(f"scale={scale}")
-        filters.append(f"tile={cols}x1")
-        filter_complex = ",".join(filters)
+        cmd += ["-i", str(input_pattern)]
+        if options:
+            cmd += options
 
-        cmd = [
-            "ffmpeg",
-            "-framerate",
-            str(framerate),
-            "-i",
-            str(input_pattern),
-            "-filter_complex",
-            filter_complex,
-            "-frames:v",
-            "1",
-            str(output_path),
-        ]
-        subprocess.run(cmd, check=True)
-
-    def jpg_to_mp4(self, input_pattern: Path, output_path: Path, framerate: int = 24):
-        cmd = [
-            "ffmpeg",
-            "-framerate",
-            str(framerate),
-            "-i",
-            str(input_pattern),
-            "-c:v",
-            "libx264",
-            "-pix_fmt",
-            "yuv420p",
-            str(output_path),
-        ]
-        subprocess.run(cmd, check=True)
-
-    def jpg_to_webm(
-        self,
-        input_pattern: Path,
-        output_path: Path,
-        framerate: int = 24,
-        crf: int = 30,
-    ):
-        cmd = [
-            "ffmpeg",
-            "-framerate",
-            str(framerate),
-            "-i",
-            str(input_pattern),
-            "-c:v",
-            "libvpx-vp9",
-            "-b:v",
-            "0",
-            "-crf",
-            str(crf),
-            str(output_path),
-        ]
+        cmd += [str(output_pattern)]
         subprocess.run(cmd, check=True)
