@@ -48,6 +48,12 @@ class IOManagerEventHandler:
         self.ui["project_combo_box"].clear()
         self.ui["project_combo_box"].addItem("Select Project")
         project_list = self.path_mgr.get_project_list()
+
+        # """/show 경로에서 필요없는 폴더 제외"""
+
+        # not_project_list = [""]
+        # project_list = [dir for dir in project_list if dir not in not_project_list]
+
         self.ui["project_combo_box"].addItems(project_list)
 
     def load_scan_date_list(self):
@@ -55,6 +61,11 @@ class IOManagerEventHandler:
         self.ui["date_combo_box"].clear()
         self.ui["date_combo_box"].addItem("Select Date")
         scan_date_list = self.path_mgr.get_scan_date_list()
+
+        """Scan Date 경로에서 list 폴더 제외"""
+        not_date_list = ["list"]
+        scan_date_list = [dir for dir in scan_date_list if dir not in not_date_list]
+
         self.ui["date_combo_box"].addItems(scan_date_list)
 
     def project_changed(self, item: str):
@@ -121,6 +132,7 @@ class IOManagerEventHandler:
         """경로 지정"""
         org_path = selected_path / "org"
         jpg_path = selected_path / "jpg"
+        meta_path = selected_path / "metadata"
         # filmstrip_path = selected_path / "filmstrip"
         # montage_path = selected_path / "montage"
         # mp4_path = selected_path / "mp4"
@@ -129,6 +141,7 @@ class IOManagerEventHandler:
         dm = DirectoryManager()
         dm.ensure_directory(org_path, exist_ok=True, parents=True)
         dm.ensure_directory(jpg_path, exist_ok=True, parents=True)
+        dm.ensure_directory(meta_path, exist_ok=True, parents=True)
         # dm.ensure_directory(filmstrip_path, exist_ok=True, parents=True)
         # dm.ensure_directory(montage_path, exist_ok=True, parents=True)
 
@@ -260,6 +273,7 @@ class IOManagerEventHandler:
             ]
         - 썸네일 UI와 연결
         """
+        # Scanlsit 경로 생성
         pass
 
     def edit_metadata(self):
@@ -281,6 +295,20 @@ class IOManagerEventHandler:
         2. Seq / Shot Name 지정된 경로로 Data 이동
         3.
         """
+        pass
+
+    def load_scanlist(self, project):
+        """
+        UI에서 보여주는 Scan List 로드
+
+        """
+        project = self.ui["project_combo_box"].currentText()
+        scan_p = self.path_mgr.project_to_path(project, "scan")
+        scan_list_p = scan_p / "list"
+
+        dm = DirectoryManager()
+        dm.ensure_directory(scan_list_p, exist_ok=True, parents=True)
+
         pass
 
     def nuke_set_slate_info(self):

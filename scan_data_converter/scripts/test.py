@@ -5,6 +5,9 @@ from openpyxl import Workbook
 from openpyxl.drawing.image import Image as XLImage
 from PIL import Image
 import tempfile
+from managers.file_manager import FileManager
+
+from typing import List, Dict, Any
 
 
 # 1. EXIFManager: EXR 시퀀스에서 메타데이터 추출
@@ -12,40 +15,29 @@ class ExifManager:
     def __init__(self, exiftool_path: str = "exiftool"):
         self.exiftool_path = exiftool_path
 
-    def extract_json(self, file_paths):
-        cmd = [self.exiftool_path, "-j", "-n"] + [str(p) for p in file_paths]
+    def extract_metadata(self, file_paths: List[Path]) -> Dict[str, Dict[str, Any]]:
+        # 파일 경로를 문자열 리스트로 변환
+        file_strs = [str(p) for p in file_paths]
+        cmd = [self.exiftool_path, "-j", "-n", *file_strs]
+
         result = subprocess.run(cmd, capture_output=True, text=True)
+
         if result.returncode != 0:
             raise RuntimeError(f"Exiftool error: {result.stderr}")
-        return json.loads(result.stdout)
+        # JSON 문자열을 파이썬 객체(리스트 of dict)로 파싱해서 반환
+        try:
+            raw_list = json.loads(result.stdout)
+        except json.JSONDecodeError as e:
+            raise RuntimeError(f"JSON 파싱 오류: {e}\n출력:\n{result.stdout}")
 
+        metadata: Dict[str, Dict[str, Any]] = {}
 
-# 2. Thumbnail maker: 첫 프레임 JPG 생성
-class ThumbnailMaker:
-    def __init__(self, width=200, height=112):
-        self.size = (width, height)
+        for item in raw_list:
+            source = item.pop("SourceFile", None)
+            if source:
+                metadata[source] = item
 
-    def make_from_exr(self, exr_pattern, start_number=1001):
-        # ffmpeg를 통해 첫 프레임만 JPG로 추출
-        tmp = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
-        cmd = [
-            "ffmpeg",
-            "-y",
-            "-start_number",
-            str(start_number),
-            "-i",
-            str(exr_pattern),
-            "-frames:v",
-            "1",
-            tmp.name,
-        ]
-        subprocess.run(cmd, check=True)
-        # PIL로 리사이즈
-        with Image.open(tmp.name) as img:
-            img.thumbnail(self.size)
-            thumb_path = tmp.name.replace(".jpg", "_thumb.jpg")
-            img.save(thumb_path)
-        return thumb_path
+        return metadata
 
 
 # 3. 엑셀 작성기: 메타+썸네일 삽입
@@ -86,21 +78,32 @@ class ExcelWriter:
 # 4. 테스트 실행: test.py
 if __name__ == "__main__":
     # 테스트용 경로 설정
-    scan_dir = Path("/path/to/EXR_sequence")
-    exr_files = sorted(scan_dir.glob("*.exr"))
+    p = "/show/Constantine/product/scan/20250515_1/097_A206C024_240315_R29Q"
+    selected_fm = FileManager(Path(p))
 
-    exif = ExifManager()
-    metadata_list = exif.extract_json(exr_files)
+    # 1) EXR 파일 리스트 수집
+    exr_dict = selected_fm.collect_by_extension()
+    exr_files = exr_dict[".exr"]  # 리스트
 
-    thumb_maker = ThumbnailMaker()
+    try:
+        exif_mgr = ExifManager()
+        raw_meta_list = exif_mgr.extract_metadata(exr_files)
+        # print(json.dumps(raw_meta_list, indent=2, ensure_ascii=False))
+        # pprint.pprint(raw_meta_list)
+
+    except RuntimeError as e:
+        print(f"오류 발생: {e}")
+
+    # 썸네일 경로지정
+
     excel = ExcelWriter(out_path="scan_metadata.xlsx")
 
-    # 메타데이터 순회
-    for md in metadata_list:
-        thumb = thumb_maker.make_from_exr(
-            exr_pattern=scan_dir / f"{md['FileName'].split('.')[0]}.%07d.exr"
-        )
-        excel.append_row(md, thumb)
+    # # 메타데이터 순회
+    # for md in metadata_list:
+    #     thumb = thumb_maker.make_from_exr(
+    #         exr_pattern=scan_dir / f"{md['FileName'].split('.')[0]}.%07d.exr"
+    #     )
+    #     excel.append_row(md, thumb)
 
-    excel.save()
-    print("Test complete: scan_metadata.xlsx generated with thumbnails.")
+    # excel.save()
+    # print("Test complete: scan_metadata.xlsx generated with thumbnails.")

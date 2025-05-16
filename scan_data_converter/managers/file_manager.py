@@ -130,3 +130,8 @@ class FileManager:
     def to_json(self, data: Any, **kwargs) -> str:
         """JSON 직렬화 헬퍼 메서드"""
         return json.dumps(data, ensure_ascii=False, indent=2, **kwargs)
+
+    def generate_thumbnail(self):
+        """jpg 시퀀스 Converting 후"""
+
+        pass

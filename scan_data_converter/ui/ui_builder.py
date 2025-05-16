@@ -33,6 +33,7 @@ class UiBuilder(QWidget):
             ("path_line_edit", QLineEdit, ""),
             ("btn_select", QPushButton, "Select to Convert"),
             ("btn_load", QPushButton, "Load Metadata"),
+            ("btn_excel_load", QPushButton, "Load"),
             ("btn_excel_edit", QPushButton, "Edit"),
             ("btn_excel_save", QPushButton, "Save"),
             ("btn_collect", QPushButton, "Collect"),
@@ -56,41 +57,6 @@ class UiBuilder(QWidget):
         main_layout.addWidget(self.build_main_table())
         main_layout.addLayout(self.build_bottom_layout())
 
-    def build_project_layout(self):
-        project_lay = QHBoxLayout()
-        project_lay.setContentsMargins(0, 0, 0, 0)
-        project_lay.setSpacing(2)
-
-        pro_lbl = self.widget_dict["project_label"]
-        pro_lbl.setFixedWidth(60)
-        pro_lbl.setMargin(0)  # 레이블 텍스트 주변 공백 없애기
-
-        pro_cmb = self.widget_dict["project_combo_box"]
-        pro_cmb.setFixedWidth(150)
-        pro_cmb.setStyleSheet("padding:0px; margin:0px;")  # 내부 여백 최소화
-
-        project_lay.addWidget(pro_lbl)
-        project_lay.addWidget(pro_cmb)
-
-        return project_lay
-
-    def build_date_layout(self):
-        date_lay = QHBoxLayout()
-        date_lay.setContentsMargins(0, 0, 0, 0)
-        date_lay.setSpacing(2)
-
-        date_lbl = self.widget_dict["date_label"]
-        date_lbl.setFixedWidth(40)
-        date_lbl.setMargin(0)
-
-        date_cmb = self.widget_dict["date_combo_box"]
-        date_cmb.setFixedWidth(150)
-        date_cmb.setStyleSheet("padding:0px; margin:0px;")
-
-        date_lay.addWidget(date_lbl)
-        date_lay.addWidget(date_cmb)
-        return date_lay
-
     def build_header_layout1(self):
         layout = QHBoxLayout()
         layout.addWidget(self.widget_dict["path_label"])
@@ -105,11 +71,11 @@ class UiBuilder(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(5)  # Project와 Date 블록 사이만 띄우기
 
-        # project_lay = self.build_project_layout()
-        # layout.addLayout(project_lay)
+        project_lay = self.build_project_layout()
+        layout.addLayout(project_lay)
 
-        # date_lay = self.build_date_layout()
-        # layout.addLayout(date_lay)
+        date_lay = self.build_date_layout()
+        layout.addLayout(date_lay)
 
         layout.addStretch()  # 공간 채우기
 
@@ -124,15 +90,28 @@ class UiBuilder(QWidget):
 
         layout.addStretch()
 
-        project_lay = self.build_project_layout()
-        layout.addLayout(project_lay)
+        # project_lay = self.build_project_layout()
+        # layout.addLayout(project_lay)
 
-        date_lay = self.build_date_layout()
-        layout.addLayout(date_lay)
+        # date_lay = self.build_date_layout()
+        # layout.addLayout(date_lay)
+
+        return layout
+
+    def build_bottom_layout(self):
+        layout = QHBoxLayout()
+        """Excel Layout"""
+        excel_layout = self.build_excel_layout()
+        layout.addLayout(excel_layout)
+
+        """Action Layout"""
+        action_layout = self.build_action_layout()
+        layout.addLayout(action_layout)
 
         return layout
 
     def build_check_layout(self):
+        """Check All, Uncheck All"""
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(5)
@@ -150,7 +129,7 @@ class UiBuilder(QWidget):
         return layout
 
     def build_table_check(self, row: int):
-        """주어진 행에 체크박스 셀을 추가"""
+        """column idx : 0번째 row 에 체크박스 셀을 추가"""
         item = QTableWidgetItem()
         item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
         item.setCheckState(Qt.Unchecked)
@@ -214,23 +193,11 @@ class UiBuilder(QWidget):
         return table
 
     def build_table_thumbnail(self, row: int, thumbnail_path: str):
-        """"""
+        """idx : 1번째 row에 Thumbnail 추가"""
         label = QLabel()
         pixmap = QPixmap(thumbnail_path).scaled(80, 80, Qt.KeepAspectRatio)
         label.setPixmap(pixmap)
         self.table.setCellWidget(row, 1, label)
-
-    def build_bottom_layout(self):
-        layout = QHBoxLayout()
-        """Excel Layout"""
-        excel_layout = self.build_excel_layout()
-        layout.addLayout(excel_layout)
-
-        """Action Layout"""
-        action_layout = self.build_action_layout()
-        layout.addLayout(action_layout)
-
-        return layout
 
     def build_excel_layout(self):
         layout = QVBoxLayout()
@@ -245,3 +212,38 @@ class UiBuilder(QWidget):
         layout.addWidget(self.widget_dict["btn_collect"])
         layout.addWidget(self.widget_dict["btn_publish"])
         return layout
+
+    def build_project_layout(self):
+        project_lay = QHBoxLayout()
+        project_lay.setContentsMargins(0, 0, 0, 0)
+        project_lay.setSpacing(2)
+
+        pro_lbl = self.widget_dict["project_label"]
+        pro_lbl.setFixedWidth(60)
+        pro_lbl.setMargin(0)  # 레이블 텍스트 주변 공백 없애기
+
+        pro_cmb = self.widget_dict["project_combo_box"]
+        pro_cmb.setFixedWidth(150)
+        pro_cmb.setStyleSheet("padding:0px; margin:0px;")  # 내부 여백 최소화
+
+        project_lay.addWidget(pro_lbl)
+        project_lay.addWidget(pro_cmb)
+
+        return project_lay
+
+    def build_date_layout(self):
+        date_lay = QHBoxLayout()
+        date_lay.setContentsMargins(0, 0, 0, 0)
+        date_lay.setSpacing(2)
+
+        date_lbl = self.widget_dict["date_label"]
+        date_lbl.setFixedWidth(40)
+        date_lbl.setMargin(0)
+
+        date_cmb = self.widget_dict["date_combo_box"]
+        date_cmb.setFixedWidth(150)
+        date_cmb.setStyleSheet("padding:0px; margin:0px;")
+
+        date_lay.addWidget(date_lbl)
+        date_lay.addWidget(date_cmb)
+        return date_lay
