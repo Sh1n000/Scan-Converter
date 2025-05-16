@@ -18,9 +18,12 @@ class ExifManager:
         # 파일 경로를 문자열 리스트로 변환
         file_strs = [str(p) for p in file_paths]
         cmd = [self.exiftool_path, "-j", "-n", *file_strs]
+
         result = subprocess.run(cmd, capture_output=True, text=True)
+
         if result.returncode != 0:
             raise RuntimeError(f"Exiftool error: {result.stderr}")
+        # JSON 문자열을 파이썬 객체(리스트 of dict)로 파싱해서 반환
         try:
             raw_list = json.loads(result.stdout)
         except json.JSONDecodeError as e:
@@ -32,4 +35,5 @@ class ExifManager:
             source = item.pop("SourceFile", None)
             if source:
                 metadata[source] = item
+
         return metadata

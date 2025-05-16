@@ -3,6 +3,15 @@ import json
 from pathlib import Path
 from typing import List, Dict, Any
 
+from pathlib import Path
+from dataclasses import dataclass, asdict
+from typing import List, Dict, Union
+
+# managers/metadata_manager.py
+import json
+import logging
+import pandas as pd
+
 
 class MetadataManager:
     """
@@ -15,16 +24,24 @@ class MetadataManager:
 
     def add_record(
         self,
-        seq_name: str,
-        shot_name: str,
-        version: str,
-        org_type: str,
-        scan_path: str,
-        src_name: str,
+        file_path: str,
         metadata: Dict[str, Any],
         thumbnail: str = "",
         check: bool = False,
     ) -> None:
+        file_path = Path(file_path)
+        seq_name = ""
+        shot_name = ""
+        version = str(metadata.get("version", ""))
+        org_type = file_path.parent.name
+        scan_path = str(file_path.parent)
+        src_name = file_path.name
+
+        width = metadata.get("ImageWidth")
+        height = metadata.get("ImageHeight")
+
+        resolution = f"{width}x{height}" if width and height else ""
+
         record = {
             "check": check,
             "thumbnail": thumbnail,
@@ -34,8 +51,7 @@ class MetadataManager:
             "type": org_type,
             "scan_path": scan_path,
             "src_name": src_name,
-            "resolution": f"{width}x{height}",
-            "metadata": metadata,
+            "resolution": resolution,
         }
         self.records.append(record)
 
@@ -47,3 +63,20 @@ class MetadataManager:
         """파일로 저장합니다."""
         data = self.to_json(indent=indent)
         out_path.write_text(data, encoding="utf-8")
+
+    def save_excel(self, out_path: Path, filename: str) -> Path:
+        """
+        pandas DataFrame으로 변환하여 Excel 파일로 저장
+        """
+
+        # DataFrame 변환 전 Path를 문자열로 변환
+        records_dicts = [
+            {**asdict(r), "file_path": str(r.file_path)} for r in self.records
+        ]
+        df = pd.DataFrame(records_dicts)
+
+        out_file = out_path / filename
+
+        df.to_excel(out_file, index=False)
+        logging.info(f"Saved metadata Excel at: {out_file}")
+        return out_file

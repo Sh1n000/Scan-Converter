@@ -174,7 +174,7 @@ class IOManagerEventHandler:
                 # # 4) JSON 또는 Excel로 출력
                 # meta_mgr.save_json(selected_path)
 
-                # meta_mgr.save_excel(selected_path)
+                # meta_mgr.save_excel(selected_path, "metadata.xlsx")
 
             except Exception as e:
                 err_box = QMessageBox()

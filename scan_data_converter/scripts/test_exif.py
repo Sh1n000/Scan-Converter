@@ -6,7 +6,12 @@ from managers.exif_manager import ExifManager
 from managers.metadata_manager import MetadataManager
 from managers.file_manager import FileManager
 from pathlib import Path
-import pprint
+
+# import pprint
+import pandas as pd
+
+from IPython.display import display
+
 
 if __name__ == "__main__":
     """
@@ -25,20 +30,36 @@ if __name__ == "__main__":
     try:
         exif_mgr = ExifManager()
         raw_meta_list = exif_mgr.extract_metadata(exr_files)
-        print(json.dumps(raw_meta_list, indent=2, ensure_ascii=False))
-        pprint.pprint(raw_meta_list)
+        # print(json.dumps(raw_meta_list, indent=2, ensure_ascii=False))
+        # pprint.pprint(raw_meta_list)
 
     except RuntimeError as e:
         print(f"오류 발생: {e}")
 
-    # 3) MetadataManager에 맵핑 & 저장
+    df = pd.DataFrame(raw_meta_list)
+    display(df)
+
+    # 빈 컬럼 추가
+    # df["seq_name"] = ""
+    # df["shot_name"] = ""
+    # df["type"] = "org"
+    # df["version"] = ""
+    # df["scan_path"] = ""
+    # df.to_excel("scan_list.xlsx", index=False)
+
+    # # 3) MetadataManager에 맵핑 & 저장
     # meta_mgr = MetadataManager()
-    # for path, meta in zip(exr_files, raw_meta_list):
-    #     meta_mgr.add_record(path, meta)
+    # for src_path, meta in raw_meta_list.items():
+    #     meta_mgr.add_record(src_path, meta)  # src_path -> str
 
-    # # 4) JSON 또는 Excel로 출력
-    # meta_mgr.save_json(selected_path)
+    # # JSON 출력
+    # print(meta_mgr.to_json())
 
-    # meta_mgr.save_excel(selected_path)
+    # # pprint.pprint(meta_mgr.records)
 
-    # 메타데이터 추출
+    # # # 4) JSON 또는 Excel로 출력
+    # # meta_mgr.save_json(selected_path)
+
+    # # meta_mgr.save_excel(selected_path)
+
+    # # 메타데이터 추출

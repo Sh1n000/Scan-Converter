@@ -56,22 +56,6 @@ class UiBuilder(QWidget):
         main_layout.addWidget(self.build_main_table())
         main_layout.addLayout(self.build_bottom_layout())
 
-    def build_header_layout1(self):
-        # 전체 레이아웃
-        layout = QHBoxLayout()
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(5)  # Project와 Date 블록 사이만 띄우기
-
-        project_lay = self.build_project_layout()
-        layout.addLayout(project_lay)
-
-        date_lay = self.build_date_layout()
-        layout.addLayout(date_lay)
-
-        layout.addStretch()  # 공간 채우기
-
-        return layout
-
     def build_project_layout(self):
         project_lay = QHBoxLayout()
         project_lay.setContentsMargins(0, 0, 0, 0)
@@ -107,7 +91,7 @@ class UiBuilder(QWidget):
         date_lay.addWidget(date_cmb)
         return date_lay
 
-    def build_header_layout2(self):
+    def build_header_layout1(self):
         layout = QHBoxLayout()
         layout.addWidget(self.widget_dict["path_label"])
         layout.addWidget(self.widget_dict["path_line_edit"], 3)
@@ -115,16 +99,38 @@ class UiBuilder(QWidget):
         layout.addWidget(self.widget_dict["btn_load"])
         return layout
 
+    def build_header_layout2(self):
+        # 전체 레이아웃
+        layout = QHBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(5)  # Project와 Date 블록 사이만 띄우기
+
+        # project_lay = self.build_project_layout()
+        # layout.addLayout(project_lay)
+
+        # date_lay = self.build_date_layout()
+        # layout.addLayout(date_lay)
+
+        layout.addStretch()  # 공간 채우기
+
+        return layout
+
     def build_header_layout3(self):
-        header_layout = QHBoxLayout()
+        layout = QHBoxLayout()
         check_layout = self.build_check_layout()
         check_layout.setSizeConstraint(QHBoxLayout.SetFixedSize)
 
-        header_layout.addLayout(check_layout)
+        layout.addLayout(check_layout)
 
-        header_layout.addStretch()
+        layout.addStretch()
 
-        return header_layout
+        project_lay = self.build_project_layout()
+        layout.addLayout(project_lay)
+
+        date_lay = self.build_date_layout()
+        layout.addLayout(date_lay)
+
+        return layout
 
     def build_check_layout(self):
         layout = QHBoxLayout()
